@@ -556,7 +556,7 @@
                                         <th class="p-4">المدينة والعنوان</th>
                                         <th class="p-4">المنتجات المطلوبة</th>
                                         <th class="p-4">المجموع الكلي</th>
-                                        <th class="p-4">تحديث الحالة والملاحظات</th>
+                                        <th class="p-4 text-center">تحديث الحالة والإجراءات</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 dark:divide-white/5">
@@ -628,29 +628,43 @@
                                             <td class="p-4 font-black text-brand-600 dark:text-brand-400 text-sm font-en">
                                                 {{ $order->total_amount }} <span class="text-xs font-bold font-sans text-slate-500 dark:text-slate-400">DH</span>
                                             </td>
-                                            <td class="p-4">
-                                                <form action="{{ route('admin.orders.updateStatus', $order->id) }}" method="POST" class="flex items-center gap-2">
-                                                    @csrf
-                                                    <select name="status" class="border rounded-xl px-2 py-1.5 text-xs font-bold outline-none 
-                                                        {{ $order->status == 'nouveau' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-500/30' : '' }}
-                                                        {{ $order->status == 'confirme' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-500/30' : '' }}
-                                                        {{ $order->status == 'en_livraison' ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-500/30' : '' }}
-                                                        {{ $order->status == 'livre' ? 'bg-emerald-50 dark:bg-brand-500/10 text-emerald-700 dark:text-brand-400 border-emerald-300 dark:border-brand-500/30' : '' }}
-                                                        {{ $order->status == 'annule' ? 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-300 dark:border-red-500/30' : '' }}
-                                                        {{ $order->status == 'retour' ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border-slate-300 dark:border-slate-700' : '' }}
-                                                    ">
-                                                        <option value="nouveau" {{ $order->status == 'nouveau' ? 'selected' : '' }}>جديدة (Nouveau)</option>
-                                                        <option value="confirme" {{ $order->status == 'confirme' ? 'selected' : '' }}>مؤكدة (Confirmé)</option>
-                                                        <option value="en_livraison" {{ $order->status == 'en_livraison' ? 'selected' : '' }}>في التوصيل (En livraison)</option>
-                                                        <option value="livre" {{ $order->status == 'livre' ? 'selected' : '' }}>تم التوصيل (Livré)</option>
-                                                        <option value="annule" {{ $order->status == 'annule' ? 'selected' : '' }}>ملغاة (Annulé)</option>
-                                                        <option value="retour" {{ $order->status == 'retour' ? 'selected' : '' }}>مرتجع (Retour)</option>
-                                                    </select>
+                                            
+                                            <!-- عمود تحديث الحالة وحذف الطلبية -->
+                                            <td class="p-4 text-center">
+                                                <div class="inline-flex items-center justify-center gap-2">
+                                                    <!-- فورم تحديث الحالة -->
+                                                    <form action="{{ route('admin.orders.updateStatus', $order->id) }}" method="POST" class="flex items-center gap-1.5">
+                                                        @csrf
+                                                        <select name="status" class="border rounded-xl px-2 py-1.5 text-xs font-bold outline-none 
+                                                            {{ $order->status == 'nouveau' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-500/30' : '' }}
+                                                            {{ $order->status == 'confirme' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-500/30' : '' }}
+                                                            {{ $order->status == 'en_livraison' ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-500/30' : '' }}
+                                                            {{ $order->status == 'livre' ? 'bg-emerald-50 dark:bg-brand-500/10 text-emerald-700 dark:text-brand-400 border-emerald-300 dark:border-brand-500/30' : '' }}
+                                                            {{ $order->status == 'annule' ? 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-300 dark:border-red-500/30' : '' }}
+                                                            {{ $order->status == 'retour' ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border-slate-300 dark:border-slate-700' : '' }}
+                                                        ">
+                                                            <option value="nouveau" {{ $order->status == 'nouveau' ? 'selected' : '' }}>جديدة (Nouveau)</option>
+                                                            <option value="confirme" {{ $order->status == 'confirme' ? 'selected' : '' }}>مؤكدة (Confirmé)</option>
+                                                            <option value="en_livraison" {{ $order->status == 'en_livraison' ? 'selected' : '' }}>في التوصيل (En livraison)</option>
+                                                            <option value="livre" {{ $order->status == 'livre' ? 'selected' : '' }}>تم التوصيل (Livré)</option>
+                                                            <option value="annule" {{ $order->status == 'annule' ? 'selected' : '' }}>ملغاة (Annulé)</option>
+                                                            <option value="retour" {{ $order->status == 'retour' ? 'selected' : '' }}>مرتجع (Retour)</option>
+                                                        </select>
 
-                                                    <button type="submit" class="bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">
-                                                        حفظ 💾
-                                                    </button>
-                                                </form>
+                                                        <button type="submit" class="bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">
+                                                            حفظ 💾
+                                                        </button>
+                                                    </form>
+
+                                                    <!-- فورم حذف الطلبية -->
+                                                    <form action="{{ route('admin.orders.destroy', $order->id) }}" method="POST" onsubmit="return confirm('⚠️ واش متأكد باغي تمسح الطلبية رقم ({{ $order->tracking_number }}) نهائياً؟')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 p-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1" title="حذف الطلبية نهائياً">
+                                                            <span>🗑️</span>
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </td>
                                         </tr>
                                     @empty
