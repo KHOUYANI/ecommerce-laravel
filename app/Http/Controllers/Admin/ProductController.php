@@ -61,7 +61,7 @@ class ProductController extends Controller
 
         $category = Category::firstOrCreate(
             ['name' => $request->name],
-            ['slug' => Str::slug($request->name) . '-' . rand(100, 999), 'is_active' => 1]
+            ['slug' => Str::slug($request->name) . '-' . rand(100, 999)]
         );
 
         if ($request->wantsJson() || $request->ajax()) {
