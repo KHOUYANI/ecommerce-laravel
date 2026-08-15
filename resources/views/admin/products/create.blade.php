@@ -27,7 +27,6 @@
 
     <main class="max-w-4xl mx-auto px-6 py-8">
         
-        {{-- عرض رسائل النجاح والخطأ --}}
         @if(session('success'))
             <div class="bg-emerald-50 border-r-4 border-emerald-500 p-4 rounded-xl mb-6 shadow-sm text-emerald-800 font-bold text-xs flex items-center gap-2">
                 <span>✅</span>
@@ -85,7 +84,7 @@
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-2">ثمن البيع (MAD) * :</label>
                         <input type="number" step="0.01" name="base_price" value="{{ old('base_price') }}" placeholder="249.00" required 
-                               class="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                               class="w-full border @error('base_price') border-rose-500 bg-rose-50 @else border-slate-300 @enderror rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
                     </div>
 
                     <div>
@@ -122,24 +121,51 @@
                     </div>
                 </div>
 
-                {{-- الصور --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-dashed border-slate-300">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-2">1. رفع صورة من الجهاز (JPG/PNG/WEBP):</label>
-                        <input type="file" name="image" id="imageInput" accept="image/*" 
-                               class="w-full border border-slate-300 rounded-xl p-2 text-xs bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
-                        <p class="text-[11px] text-slate-500 mt-1">الحد الأقصى لحجم الصورة: 2MB</p>
+                {{-- 📸 قسم الصور المتعددة التفاعلي --}}
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-xs text-slate-800 flex items-center gap-2">
+                            <span>📸</span>
+                            <span>صور المنتج (الرئيسية + صور المعرض)</span>
+                        </h3>
+                        <span class="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold">يدعم اختيار صور متعددة</span>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-2">2. أو وضع رابط صورة مباشر (Image URL):</label>
-                        <input type="url" name="image_url" value="{{ old('image_url') }}" placeholder="https://images.unsplash.com/..." 
-                               class="w-full border border-slate-300 rounded-xl p-3 text-sm bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                    {{-- مربع الرفع السريع مع السحب والإفلات --}}
+                    <div class="relative border-2 border-dashed border-slate-300 hover:border-emerald-500 bg-white rounded-2xl p-6 text-center transition cursor-pointer group">
+                        <input type="file" name="images[]" id="imagesInput" accept="image/*" multiple 
+                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                        <div class="space-y-2">
+                            <span class="text-3xl block group-hover:scale-110 transition-transform">🖼️</span>
+                            <div class="text-xs font-bold text-slate-700">
+                                اضغط هنا لاختيار عدة صور، أو اسحب الصور وضعها هنا مباشرة
+                            </div>
+                            <p class="text-[11px] text-slate-400 font-normal">
+                                اضغط وابقَ ضاغطاً على زر <kbd class="bg-slate-100 border px-1 rounded text-slate-600 font-mono">Ctrl</kbd> لتحديد عدة صور دفعة واحدة
+                            </p>
+                        </div>
                     </div>
 
-                    <div id="imagePreviewContainer" class="hidden md:col-span-2 flex items-center gap-3 pt-2">
-                        <span class="text-xs font-bold text-slate-600">معاينة الصورة:</span>
-                        <img id="imagePreview" src="#" alt="Preview" class="w-16 h-16 object-cover rounded-lg border border-slate-200 shadow-sm">
+                    {{-- روابط صور مباشرة --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">رابط صورة رئيسية مباشر (اختياري):</label>
+                            <input type="url" name="image_url" value="{{ old('image_url') }}" placeholder="https://images.unsplash.com/..." 
+                                   class="w-full border border-slate-300 rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">روابط صور إضافية (رابط فكل سطر):</label>
+                            <textarea name="gallery_urls" rows="1" placeholder="https://image1.jpg&#10;https://image2.jpg" 
+                                      class="w-full border border-slate-300 rounded-xl p-2 text-xs outline-none focus:ring-2 focus:ring-emerald-500 font-mono bg-white"></textarea>
+                        </div>
+                    </div>
+
+                    {{-- معاينة فورية للصور المختارة مع إمكانية الحذف --}}
+                    <div id="previewContainer" class="hidden pt-3 border-t border-slate-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-slate-700" id="selectedCount">الصور المختارة (0):</span>
+                        </div>
+                        <div id="imageGrid" class="grid grid-cols-3 sm:grid-cols-6 gap-3"></div>
                     </div>
                 </div>
 
@@ -168,7 +194,7 @@
         </div>
     </main>
 
-    {{-- ➕ Modal إضافة قسم جديد بدون مشاكل Fetch --}}
+    {{-- ➕ Modal إضافة قسم جديد --}}
     <div id="addCategoryModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl border border-slate-200">
             <div class="flex justify-between items-center border-b pb-3">
@@ -190,21 +216,38 @@
         </div>
     </div>
 
-    {{-- Script معاينة الصورة --}}
+    {{-- Script معاينة الصور المتعددة المتقدم --}}
     <script>
-        const imageInput = document.getElementById('imageInput');
-        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
-        const imagePreview = document.getElementById('imagePreview');
+        const imagesInput = document.getElementById('imagesInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const imageGrid = document.getElementById('imageGrid');
+        const selectedCount = document.getElementById('selectedCount');
 
-        imageInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    imagePreview.src = event.target.result;
-                    imagePreviewContainer.classList.remove('hidden');
-                }
-                reader.readAsDataURL(file);
+        imagesInput.addEventListener('change', function(e) {
+            imageGrid.innerHTML = '';
+            const files = Array.from(e.target.files);
+            
+            if (files.length > 0) {
+                previewContainer.classList.remove('hidden');
+                selectedCount.innerText = `الصور المختارة (${files.length}):`;
+
+                files.forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const div = document.createElement('div');
+                        div.className = 'relative group rounded-xl overflow-hidden border border-slate-200 aspect-square bg-slate-100';
+                        div.innerHTML = `
+                            <img src="${event.target.result}" class="w-full h-full object-cover">
+                            <span class="absolute bottom-1 right-1 bg-slate-900/80 text-white text-[9px] px-1.5 py-0.5 rounded font-mono">
+                                ${index === 0 ? 'رئيسية' : '#' + (index + 1)}
+                            </span>
+                        `;
+                        imageGrid.appendChild(div);
+                    }
+                    reader.readAsDataURL(file);
+                });
+            } else {
+                previewContainer.classList.add('hidden');
             }
         });
     </script>
