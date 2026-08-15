@@ -173,10 +173,6 @@ class ShopController extends Controller
         $totalAmount = max(0, $subtotal + $shipping - $discount);
         $trackingNumber = 'COD-' . strtoupper(Str::random(8));
 
-        // حالة الطلبية المبدئية: إذا كانت بالبطاقة تكون 'pending_payment'
-        $initialStatus = ($validated['payment_method'] === 'card') ? 'nouveau' : 'nouveau';
-        $initialPayStatus = 'unpaid';
-
         $order = Order::create([
             'tracking_number' => $trackingNumber,
             'customer_name'   => $validated['customer_name'],
@@ -184,9 +180,9 @@ class ShopController extends Controller
             'city'            => $validated['city'],
             'address'         => $validated['address'],
             'total_amount'    => $totalAmount,
-            'status'          => $initialStatus,
+            'status'          => 'nouveau',
             'payment_method'  => $validated['payment_method'],
-            'payment_status'  => $initialPayStatus,
+            'payment_status'  => 'unpaid',
             'admin_notes'     => $discount > 0 ? "خصم كوبون: {$discount} DH" : null,
         ]);
 
@@ -203,26 +199,22 @@ class ShopController extends Controller
 
         Lead::where('customer_phone', $cleanPhone)->update(['is_recovered' => true]);
 
-        // 💳 معالجة صارمة للدفع بالبطاقة عبر YouCan Pay
+        // 💳 معالجة الدفع عبر YouCan Pay
         if ($validated['payment_method'] === 'card') {
-            $privateKey = env('YOUCAN_PRIVATE_KEY');
+            $privateKey = trim(env('YOUCAN_PRIVATE_KEY', ''));
 
-            if (!$privateKey) {
+            if (empty($privateKey)) {
                 $order->items()->delete();
                 $order->delete();
-                return redirect()->back()->with('error', '⚠️ خدمة الدفع بالبطاقة البنكية غير مهيأة حالياً. المرجو اختيار الدفع عند الاستلام (COD).')->withInput();
+                return redirect()->back()->with('error', '⚠️ المفتاح YOUCAN_PRIVATE_KEY غير موجود في إعدادات Railway!')->withInput();
             }
 
             try {
-                $isSandbox = str_contains($privateKey, 'sandbox') || env('YOUCAN_SANDBOX', true);
                 $endpoint = 'https://pay.youcan.shop/api/tokenize';
 
-                $response = Http::withHeaders([
-                    'Authorization' => 'Bearer ' . $privateKey,
-                    'Accept'        => 'application/json',
-                ])->post($endpoint, [
+                $payload = [
                     'pri_key'     => $privateKey,
-                    'amount'      => (int)($totalAmount * 100),
+                    'amount'      => (int) round($totalAmount * 100),
                     'currency'    => 'MAD',
                     'order_id'    => $order->tracking_number,
                     'success_url' => route('youcan.callback', ['tracking' => $order->tracking_number]) . '?status=success',
@@ -237,28 +229,33 @@ class ShopController extends Controller
                         'phone'        => $validated['customer_phone'],
                         'email'        => 'customer_' . $order->id . '@medexpress.ma',
                     ],
-                ]);
+                ];
 
-                if ($response->successful() && isset($response->json()['token']['id'])) {
-                    $token = $response->json()['token']['id'];
+                $response = Http::asJson()->acceptJson()->post($endpoint, $payload);
+                $resData = $response->json();
+
+                if ($response->successful() && isset($resData['token']['id'])) {
+                    $token = $resData['token']['id'];
+                    $isSandbox = str_contains($privateKey, 'sandbox') || env('YOUCAN_SANDBOX', true);
+                    
                     $payUrl = $isSandbox 
                         ? "https://pay.youcan.shop/sandbox/payment-gateways/tokenize/{$token}"
                         : "https://pay.youcan.shop/payment-gateways/tokenize/{$token}";
 
-                    return redirect($payUrl);
+                    return redirect()->away($payUrl);
                 } else {
                     $order->items()->delete();
                     $order->delete();
-                    return redirect()->back()->with('error', '❌ تعذر فتح نافذة الدفع بالبطاقة البنكية. تأكد من صحة المفاتيح أو اختر الدفع عند الاستلام.')->withInput();
+                    $msg = $resData['message'] ?? $response->body();
+                    return redirect()->back()->with('error', '❌ استجابة YouCan Pay: ' . $msg)->withInput();
                 }
             } catch (\Exception $e) {
                 $order->items()->delete();
                 $order->delete();
-                return redirect()->back()->with('error', '❌ حدث خطأ في الاتصال ببوابة الدفع. المرجو اختيار الدفع عند الاستلام.')->withInput();
+                return redirect()->back()->with('error', '❌ خطأ تقني: ' . $e->getMessage())->withInput();
             }
         }
 
-        // إذا كان الدفع عند الاستلام (COD)
         $this->sendTelegramNotification($order, $product, $qty);
         return redirect()->route('order.success', $order->tracking_number);
     }
@@ -268,9 +265,7 @@ class ShopController extends Controller
         $order = Order::with(['items.variant.product'])->where('tracking_number', $tracking)->firstOrFail();
         $status = $request->query('status');
 
-        // إذا فشلت العملية أو ألغى الزبون الأداء
         if ($status === 'failed' || $status !== 'success') {
-            // إعادة المخزون
             foreach ($order->items as $item) {
                 $item->variant->increment('stock_quantity', $item->quantity);
             }
@@ -278,14 +273,13 @@ class ShopController extends Controller
             $order->items()->delete();
             $order->delete();
 
-            return redirect()->route('shop.product', $productSlug)->with('error', '❌ تم رفض عملية الدفع بالبطاقة البنكية أو إلغاؤها. المرجو التأكد من معلومات البطاقة والرصيد المتوفر أو اختيار الدفع عند الاستلام.');
+            return redirect()->route('shop.product', $productSlug)->with('error', '❌ تم إلغاء أو رفض عملية الدفع بالبطاقة. تأكد من رصيدك أو اختر الدفع عند الاستلام.');
         }
 
-        // إذا نجح الأداء واقتطعت الفلوس
         $order->update([
             'payment_status' => 'paid',
             'status'         => 'confirme',
-            'admin_notes'    => ($order->admin_notes ? $order->admin_notes . ' | ' : '') . '✅ تم استلام المبلغ بنجاح عبر YouCan Pay (Carte Bancaire)'
+            'admin_notes'    => ($order->admin_notes ? $order->admin_notes . ' | ' : '') . '✅ تم استلام الأداء بنجاح عبر YouCan Pay'
         ]);
 
         $firstItem = $order->items->first();
