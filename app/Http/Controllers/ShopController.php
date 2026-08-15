@@ -201,7 +201,7 @@ class ShopController extends Controller
 
         // 💳 معالجة الدفع عبر YouCan Pay
         if ($validated['payment_method'] === 'card') {
-            $privateKey = trim(env('YOUCAN_PRIVATE_KEY', ''));
+            $privateKey = trim((string) env('YOUCAN_PRIVATE_KEY', ''));
 
             if (empty($privateKey)) {
                 $order->items()->delete();
@@ -210,34 +210,37 @@ class ShopController extends Controller
             }
 
             try {
-                $endpoint = 'https://pay.youcan.shop/api/tokenize';
+                $response = Http::withoutVerifying()
+                    ->timeout(20)
+                    ->withHeaders([
+                        'Authorization' => 'Bearer ' . $privateKey,
+                        'Accept'        => 'application/json',
+                    ])
+                    ->asForm()
+                    ->post('https://pay.youcan.shop/api/tokenize', [
+                        'pri_key'     => $privateKey,
+                        'amount'      => (int) round($totalAmount * 100),
+                        'currency'    => 'MAD',
+                        'order_id'    => $order->tracking_number,
+                        'success_url' => route('youcan.callback', ['tracking' => $order->tracking_number]) . '?status=success',
+                        'error_url'   => route('youcan.callback', ['tracking' => $order->tracking_number]) . '?status=failed',
+                        'customer'    => [
+                            'name'         => $validated['customer_name'],
+                            'address'      => $validated['address'],
+                            'zip_code'     => '53000',
+                            'city'         => $validated['city'],
+                            'state'        => $validated['city'],
+                            'country_code' => 'MA',
+                            'phone'        => $validated['customer_phone'],
+                            'email'        => 'customer_' . $order->id . '@medexpress.ma',
+                        ],
+                    ]);
 
-                $payload = [
-                    'pri_key'     => $privateKey,
-                    'amount'      => (int) round($totalAmount * 100),
-                    'currency'    => 'MAD',
-                    'order_id'    => $order->tracking_number,
-                    'success_url' => route('youcan.callback', ['tracking' => $order->tracking_number]) . '?status=success',
-                    'error_url'   => route('youcan.callback', ['tracking' => $order->tracking_number]) . '?status=failed',
-                    'customer_ip' => $request->ip() ?? '127.0.0.1',
-                    'customer'    => [
-                        'name'         => $validated['customer_name'],
-                        'address'      => $validated['address'],
-                        'zip_code'     => '53000',
-                        'city'         => $validated['city'],
-                        'state'        => $validated['city'],
-                        'country_code' => 'MA',
-                        'phone'        => $validated['customer_phone'],
-                        'email'        => 'customer_' . $order->id . '@medexpress.ma',
-                    ],
-                ];
-
-                $response = Http::asJson()->acceptJson()->post($endpoint, $payload);
                 $resData = $response->json();
 
                 if ($response->successful() && isset($resData['token']['id'])) {
                     $token = $resData['token']['id'];
-                    $isSandbox = str_contains($privateKey, 'sandbox') || env('YOUCAN_SANDBOX', true);
+                    $isSandbox = str_contains($privateKey, 'sandbox') || str_contains($privateKey, 'test');
                     
                     $payUrl = $isSandbox 
                         ? "https://pay.youcan.shop/sandbox/payment-gateways/tokenize/{$token}"
@@ -247,16 +250,17 @@ class ShopController extends Controller
                 } else {
                     $order->items()->delete();
                     $order->delete();
-                    $msg = $resData['message'] ?? $response->body();
-                    return redirect()->back()->with('error', '❌ استجابة YouCan Pay: ' . $msg)->withInput();
+                    $errText = $resData['message'] ?? $response->body() ?? 'رفض الاتصال من بوابة الدفع';
+                    return redirect()->back()->with('error', '❌ فشل الاتصال مع YouCan Pay: ' . $errText)->withInput();
                 }
             } catch (\Exception $e) {
                 $order->items()->delete();
                 $order->delete();
-                return redirect()->back()->with('error', '❌ خطأ تقني: ' . $e->getMessage())->withInput();
+                return redirect()->back()->with('error', '❌ خطأ تقني في الاتصال: ' . $e->getMessage())->withInput();
             }
         }
 
+        // الدفع عند الاستلام (COD)
         $this->sendTelegramNotification($order, $product, $qty);
         return redirect()->route('order.success', $order->tracking_number);
     }
