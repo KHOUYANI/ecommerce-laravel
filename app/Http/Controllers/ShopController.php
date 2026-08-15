@@ -199,7 +199,7 @@ class ShopController extends Controller
 
         Lead::where('customer_phone', $cleanPhone)->update(['is_recovered' => true]);
 
-        // 💳 معالجة الدفع عبر YouCan Pay (Sandbox / Live)
+        // 💳 معالجة الدفع عبر YouCan Pay
         if ($validated['payment_method'] === 'card') {
             $privateKey = trim(env('YOUCAN_PRIVATE_KEY', ''));
 
@@ -210,10 +210,7 @@ class ShopController extends Controller
             }
 
             try {
-                $isSandbox = str_contains($privateKey, 'sandbox') || env('YOUCAN_SANDBOX', true);
-                $endpoint = $isSandbox 
-                    ? 'https://pay.youcan.shop/sandbox/api/tokenize'
-                    : 'https://pay.youcan.shop/api/tokenize';
+                $endpoint = 'https://pay.youcan.shop/api/tokenize';
 
                 $payload = [
                     'pri_key'     => $privateKey,
@@ -222,6 +219,7 @@ class ShopController extends Controller
                     'order_id'    => $order->tracking_number,
                     'success_url' => route('youcan.callback', ['tracking' => $order->tracking_number]) . '?status=success',
                     'error_url'   => route('youcan.callback', ['tracking' => $order->tracking_number]) . '?status=failed',
+                    'customer_ip' => $request->ip() ?? '127.0.0.1',
                     'customer'    => [
                         'name'         => $validated['customer_name'],
                         'address'      => $validated['address'],
@@ -234,16 +232,13 @@ class ShopController extends Controller
                     ],
                 ];
 
-                $response = Http::withHeaders([
-                    'Authorization' => 'Bearer ' . $privateKey,
-                    'Accept'        => 'application/json',
-                    'Content-Type'  => 'application/json',
-                ])->post($endpoint, $payload);
-
+                $response = Http::asJson()->acceptJson()->post($endpoint, $payload);
                 $resData = $response->json();
 
                 if ($response->successful() && isset($resData['token']['id'])) {
                     $token = $resData['token']['id'];
+                    $isSandbox = str_contains($privateKey, 'sandbox') || env('YOUCAN_SANDBOX', true);
+                    
                     $payUrl = $isSandbox 
                         ? "https://pay.youcan.shop/sandbox/payment-gateways/tokenize/{$token}"
                         : "https://pay.youcan.shop/payment-gateways/tokenize/{$token}";
@@ -252,8 +247,8 @@ class ShopController extends Controller
                 } else {
                     $order->items()->delete();
                     $order->delete();
-                    $msg = isset($resData['message']) ? $resData['message'] : (is_array($resData) ? json_encode($resData, JSON_UNESCAPED_UNICODE) : $response->body());
-                    return redirect()->back()->with('error', '❌ خطأ YouCan Pay (' . $response->status() . '): ' . $msg)->withInput();
+                    $msg = $resData['message'] ?? $response->body();
+                    return redirect()->back()->with('error', '❌ استجابة YouCan Pay: ' . $msg)->withInput();
                 }
             } catch (\Exception $e) {
                 $order->items()->delete();
@@ -262,7 +257,6 @@ class ShopController extends Controller
             }
         }
 
-        // الدفع عند الاستلام (COD)
         $this->sendTelegramNotification($order, $product, $qty);
         return redirect()->route('order.success', $order->tracking_number);
     }
