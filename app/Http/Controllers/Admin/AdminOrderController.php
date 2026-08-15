@@ -370,4 +370,20 @@ class AdminOrderController extends Controller
         $product->update(['is_active' => !$product->is_active]);
         return redirect()->back()->with('success', 'تم تغيير حالة توفر المنتج بنجاح!');
     }
+    public function storeCategory(Request $request)
+{
+    $request->validate([
+        'name' => 'required|string|max:255|unique:categories,name'
+    ]);
+
+    $category = \App\Models\Category::create([
+        'name' => $request->name,
+        'slug' => \Illuminate\Support\Str::slug($request->name) . '-' . rand(100, 999),
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'category' => $category
+    ]);
+}
 }

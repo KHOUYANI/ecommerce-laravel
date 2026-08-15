@@ -56,7 +56,12 @@
                             <span class="text-rose-500 text-xs mt-1 block">{{ $message }}</span>
                         @enderror
                     </div>
-
+                <div class="flex justify-between items-center mb-2">
+    <label class="block text-xs font-bold text-slate-700">القسم (Catégorie) * :</label>
+    <button type="button" onclick="addNewCategoryPrompt()" class="text-xs text-emerald-600 hover:text-emerald-700 font-bold">
+        ➕ إضافة قسم جديد
+    </button>
+</div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-2">القسم (Catégorie) * :</label>
                         <select name="category_id" required class="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
@@ -185,6 +190,29 @@
                 reader.readAsDataURL(file);
             }
         });
+        function addNewCategoryPrompt() {
+    const categoryName = prompt("اكتب اسم القسم الجديد (مثال: الإلكترونيات):");
+    if (!categoryName) return;
+
+    fetch("{{ route('admin.categories.quickStore') }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": "{{ csrf_token() }}"
+        },
+        body: JSON.stringify({ name: categoryName })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            const select = document.querySelector('select[name="category_id"]');
+            const newOption = new Option(data.category.name, data.category.id, true, true);
+            select.add(newOption);
+            alert("✅ تم إنشاء القسم واختياره بنجاح!");
+        }
+    })
+    .catch(err => alert("حدث خطأ أثناء إضافة القسم"));
+}
     </script>
 </body>
 </html>
