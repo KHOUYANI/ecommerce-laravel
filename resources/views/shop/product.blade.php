@@ -2,13 +2,15 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $product->name }} | MED EXPRESS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Plus+Jakarta+Sans:wght@700;800;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Tajawal', sans-serif; }
         html { scroll-behavior: smooth; }
+        .font-en { font-family: 'Plus Jakarta Sans', sans-serif; }
         .pulse-record {
             animation: pulse-red 1.5s infinite;
         }
@@ -16,6 +18,14 @@
             0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
             70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .pulse-ring {
+            animation: pulse-ring 2.5s infinite;
+        }
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.6); }
+            70% { box-shadow: 0 0 0 16px rgba(37, 211, 102, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
         }
     </style>
 
@@ -64,18 +74,43 @@
     </header>
 
     @php
-        $mainImg = $product->image_url;
-        if ($mainImg && !str_starts_with($mainImg, 'http') && !str_starts_with($mainImg, '/storage/')) {
-            $mainImg = '/storage/' . $mainImg;
-        }
+        // 1. تجميع وتنظيف كل صور المنتج بدون أي خطأ
+        $allImages = [];
 
-        $gallery = [];
+        // معالجة gallery_images سواء كانت مصفوفة جاهزة أو نص JSON
         if (!empty($product->gallery_images)) {
-            $decoded = json_decode($product->gallery_images, true);
-            if (is_array($decoded)) {
-                $gallery = $decoded;
+            $rawGallery = is_array($product->gallery_images) 
+                ? $product->gallery_images 
+                : json_decode($product->gallery_images, true);
+
+            if (is_array($rawGallery)) {
+                foreach ($rawGallery as $gItem) {
+                    if ($gItem) {
+                        $allImages[] = (!str_starts_with($gItem, 'http') && !str_starts_with($gItem, '/storage/')) 
+                            ? '/storage/' . $gItem 
+                            : $gItem;
+                    }
+                }
             }
         }
+
+        // معالجة الصورة الرئيسية image_url
+        if ($product->image_url) {
+            $mainImg = (!str_starts_with($product->image_url, 'http') && !str_starts_with($product->image_url, '/storage/')) 
+                ? '/storage/' . $product->image_url 
+                : $product->image_url;
+
+            if (!in_array($mainImg, $allImages)) {
+                array_unshift($allImages, $mainImg);
+            }
+        }
+
+        // صورة احتياطية
+        if (count($allImages) === 0) {
+            $allImages[] = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800';
+        }
+
+        $featuredImage = $allImages[0];
     @endphp
 
     <main class="max-w-5xl mx-auto px-4 py-8">
@@ -89,30 +124,21 @@
                     <span id="countdownTimer" class="font-mono bg-amber-200 text-amber-950 px-2.5 py-1 rounded-lg">04:22:15</span>
                 </div>
 
-                <!-- Product Display Image + Gallery Support -->
+                <!-- 🖼️ Product Display Box + Gallery Thumbnails -->
                 <div class="space-y-3">
-                    <div class="h-80 bg-slate-50 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 relative">
+                    <div class="h-80 sm:h-96 bg-slate-50 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 relative p-4">
                         <img id="mainProductDisplay" 
-                             src="{{ $mainImg ?: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800' }}" 
+                             src="{{ $featuredImage }}" 
                              alt="{{ $product->name }}" 
-                             class="w-full h-full object-contain transition duration-300"
+                             class="max-h-full max-w-full object-contain transition duration-300"
                              onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800';">
                     </div>
 
-                    @if(count($gallery) > 0)
-                        <div class="flex items-center gap-2 overflow-x-auto pb-1">
-                            <button type="button" onclick="changeImage('{{ $mainImg }}')" class="w-14 h-14 rounded-xl border-2 border-emerald-500 overflow-hidden flex-shrink-0 bg-slate-50">
-                                <img src="{{ $mainImg }}" class="w-full h-full object-cover">
-                            </button>
-                            @foreach($gallery as $gImg)
-                                @php
-                                    $thumbSrc = $gImg;
-                                    if ($thumbSrc && !str_starts_with($thumbSrc, 'http') && !str_starts_with($thumbSrc, '/storage/')) {
-                                        $thumbSrc = '/storage/' . $thumbSrc;
-                                    }
-                                @endphp
-                                <button type="button" onclick="changeImage('{{ $thumbSrc }}')" class="w-14 h-14 rounded-xl border border-slate-200 hover:border-emerald-500 overflow-hidden flex-shrink-0 bg-slate-50 transition">
-                                    <img src="{{ $thumbSrc }}" class="w-full h-full object-cover">
+                    @if(count($allImages) > 1)
+                        <div class="flex items-center gap-2.5 overflow-x-auto pb-2" id="galleryThumbs">
+                            @foreach($allImages as $idx => $gImg)
+                                <button type="button" onclick="changeMainImage('{{ $gImg }}', this)" class="thumb-btn w-16 h-16 rounded-2xl border-2 {{ $idx === 0 ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200 hover:border-slate-400' }} overflow-hidden flex-shrink-0 bg-slate-50 p-1 transition">
+                                    <img src="{{ $gImg }}" class="w-full h-full object-contain" alt="thumbnail">
                                 </button>
                             @endforeach
                         </div>
@@ -123,8 +149,8 @@
                     <span class="text-xs font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">{{ $product->category->name ?? 'منتج مميز' }}</span>
                     <h1 class="text-2xl sm:text-3xl font-black text-slate-900 mt-2">{{ $product->name }}</h1>
                     <div class="flex items-center gap-3 mt-3">
-                        <span class="text-3xl font-black text-emerald-600">{{ $product->base_price }} DH</span>
-                        <span class="text-sm line-through text-slate-400 font-bold">{{ $product->base_price + 100 }} DH</span>
+                        <span class="text-3xl font-black text-emerald-600 font-en">{{ $product->base_price }} DH</span>
+                        <span class="text-sm line-through text-slate-400 font-bold font-en">{{ $product->base_price + 100 }} DH</span>
                         <span class="bg-red-500 text-white text-[11px] font-black px-2 py-0.5 rounded-md">تخفيض 35%</span>
                     </div>
                 </div>
@@ -212,7 +238,7 @@
                     <p class="text-[11px] text-slate-400 mt-1">الدفع عند الاستلام مع فحص المنتج قبل الأداء</p>
                 </div>
 
-                <!-- Voice Note Order Box -->
+                <!-- 🎙️ Voice Note Order Box -->
                 <div class="bg-slate-900 text-white p-4 rounded-2xl mb-4 space-y-2 border border-slate-700">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
@@ -229,18 +255,18 @@
                     <div id="voiceStatusMsg" class="text-[10px] text-slate-300 hidden text-center"></div>
                 </div>
 
-                <!-- Free Shipping Progress Bar -->
+                <!-- 🚚 Interactive Free Shipping Progress Bar -->
                 <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 mb-4">
                     <div class="flex justify-between items-center text-[11px] font-bold mb-1.5">
                         <span id="shippingBarText" class="text-emerald-700">🚚 شحن مجاني مفعل لطلبك!</span>
-                        <span id="shippingBarPercent" class="text-emerald-600 font-black">100%</span>
+                        <span id="shippingBarPercent" class="text-emerald-600 font-black font-en">100%</span>
                     </div>
                     <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                         <div id="shippingProgressBar" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 100%"></div>
                     </div>
                 </div>
 
-                <!-- Fast WhatsApp Order Button -->
+                <!-- 🟢 Fast WhatsApp Order Button -->
                 <form action="{{ route('order.whatsappQuick') }}" method="POST" class="mb-4">
                     @csrf
                     <input type="hidden" name="variant_id" value="{{ $product->variants->first()->id ?? 1 }}">
@@ -264,7 +290,7 @@
                 <form action="{{ route('order.checkout') }}" method="POST" class="space-y-4 text-xs font-bold">
                     @csrf
 
-                    <!-- Quantity Bundles Radio Boxes -->
+                    <!-- 🎁 Quantity Bundles Radio Boxes -->
                     <div>
                         <label class="block text-slate-700 mb-2">اختر العرض المناسب لك (توفير أكبر):</label>
                         <div class="space-y-2">
@@ -276,7 +302,7 @@
                                         <span class="text-[10px] text-slate-400 font-normal">سعر القطعة العادي</span>
                                     </div>
                                 </div>
-                                <span class="font-black text-emerald-700 text-sm">{{ $product->base_price }} DH</span>
+                                <span class="font-black text-emerald-700 text-sm font-en">{{ $product->base_price }} DH</span>
                             </label>
 
                             <label class="bundle-card border border-slate-200 bg-white p-3 rounded-2xl flex items-center justify-between cursor-pointer hover:border-emerald-500 transition relative">
@@ -288,7 +314,7 @@
                                         <span class="text-[10px] text-emerald-600 font-bold">وفر {{ round($product->base_price * 2 * 0.15) }} DH + توصيل مجاني</span>
                                     </div>
                                 </div>
-                                <span class="font-black text-emerald-700 text-sm">{{ round($product->base_price * 2 * 0.85) }} DH</span>
+                                <span class="font-black text-emerald-700 text-sm font-en">{{ round($product->base_price * 2 * 0.85) }} DH</span>
                             </label>
 
                             <label class="bundle-card border border-slate-200 bg-white p-3 rounded-2xl flex items-center justify-between cursor-pointer hover:border-emerald-500 transition relative">
@@ -300,37 +326,39 @@
                                         <span class="text-[10px] text-amber-600 font-bold">وفر {{ round($product->base_price * 3 * 0.25) }} DH + هدية خاصة</span>
                                     </div>
                                 </div>
-                                <span class="font-black text-emerald-700 text-sm">{{ round($product->base_price * 3 * 0.75) }} DH</span>
+                                <span class="font-black text-emerald-700 text-sm font-en">{{ round($product->base_price * 3 * 0.75) }} DH</span>
                             </label>
                         </div>
                         <input type="hidden" id="qtyInput" name="quantity" value="1">
                     </div>
 
-                    <div>
-                        <label class="block text-slate-700 mb-1.5">اختر المقاس / اللون:</label>
-                        <select id="variantSelect" name="variant_id" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none" onchange="updateLivePrice()">
-                            @foreach($product->variants as $variant)
-                                <option value="{{ $variant->id }}" data-price="{{ $product->base_price + $variant->additional_price }}">
-                                    {{ $variant->size ? 'مقاس: ' . $variant->size : '' }} 
-                                    {{ $variant->color ? '- لون: ' . $variant->color : '' }}
-                                    ({{ $product->base_price + $variant->additional_price }} DH)
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                    @if($product->variants && $product->variants->count() > 0)
+                        <div>
+                            <label class="block text-slate-700 mb-1.5">اختر المقاس / اللون:</label>
+                            <select id="variantSelect" name="variant_id" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none" onchange="updateLivePrice()">
+                                @foreach($product->variants as $variant)
+                                    <option value="{{ $variant->id }}" data-price="{{ $product->base_price + $variant->additional_price }}">
+                                        {{ $variant->size ? 'مقاس: ' . $variant->size : '' }} 
+                                        {{ $variant->color ? '- لون: ' . $variant->color : '' }}
+                                        ({{ $product->base_price + $variant->additional_price }} DH)
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
 
                     <div>
-                        <label class="block text-slate-700 mb-1.5">الاسم والنسب الكامل:</label>
+                        <label class="block text-slate-700 mb-1.5">الاسم والنسب الكامل * :</label>
                         <input type="text" id="customer_name_input" name="customer_name" placeholder="مثال: يوسف الإدريسي" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none">
                     </div>
 
                     <div>
-                        <label class="block text-slate-700 mb-1.5">رقم الهاتف (الواتساب):</label>
+                        <label class="block text-slate-700 mb-1.5">رقم الهاتف (الواتساب) * :</label>
                         <input type="tel" id="customer_phone_input" name="customer_phone" placeholder="06XXXXXXXX" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none text-left font-mono" dir="ltr">
                     </div>
 
                     <div>
-                        <label class="block text-slate-700 mb-1.5">المدينة (Moroccan Cities):</label>
+                        <label class="block text-slate-700 mb-1.5">المدينة (Moroccan Cities) * :</label>
                         <select id="citySelect" name="city" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none" onchange="updateLivePrice()">
                             <option value="">-- اختر مدينتك لحساب الشحن --</option>
                             <option value="Casablanca" data-shipping="0">الدار البيضاء (توصيل مجاني 0 DH)</option>
@@ -348,7 +376,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-slate-700 mb-1.5">العنوان بالتفصيل (الحي / رقم المنزل):</label>
+                        <label class="block text-slate-700 mb-1.5">العنوان بالتفصيل (الحي / رقم المنزل) * :</label>
                         <textarea id="address_textarea" name="address" rows="2" placeholder="الحي، الإقامة، رقم الباب أو قرب مكان معروف..." required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
                     </div>
 
@@ -368,19 +396,19 @@
                     <div class="bg-slate-900 text-white p-4 rounded-2xl space-y-1.5 shadow-inner">
                         <div class="flex justify-between text-slate-300 text-[11px]">
                             <span>ثمن المنتجات:</span>
-                            <span id="subtotalDisplay" class="font-bold">0.00 DH</span>
+                            <span id="subtotalDisplay" class="font-bold font-en">0.00 DH</span>
                         </div>
                         <div class="flex justify-between text-slate-300 text-[11px]">
                             <span>مصاريف الشحن والتوصيل:</span>
-                            <span id="shippingDisplay" class="font-bold text-emerald-400">مجاني (0 DH)</span>
+                            <span id="shippingDisplay" class="font-bold text-emerald-400 font-en">مجاني (0 DH)</span>
                         </div>
                         <div id="discountRow" class="flex justify-between text-emerald-400 text-[11px] hidden">
                             <span>خصم الكوبون / الباقة:</span>
-                            <span id="discountDisplay" class="font-bold">-0.00 DH</span>
+                            <span id="discountDisplay" class="font-bold font-en">-0.00 DH</span>
                         </div>
                         <div class="border-t border-slate-700 pt-1.5 flex justify-between items-center">
                             <span class="font-black text-xs">المجموع النهائي للدفع عند الاستلام:</span>
-                            <span id="finalTotalDisplay" class="text-lg font-black text-emerald-400">0.00 DH</span>
+                            <span id="finalTotalDisplay" class="text-lg font-black text-emerald-400 font-en">0.00 DH</span>
                         </div>
                     </div>
 
@@ -397,7 +425,7 @@
     <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 p-3 flex items-center justify-between shadow-2xl">
         <div>
             <span class="text-[10px] text-slate-400 font-bold block">السعر الإجمالي:</span>
-            <span class="text-base font-black text-emerald-600">{{ $product->base_price }} DH</span>
+            <span class="text-base font-black text-emerald-600 font-en">{{ $product->base_price }} DH</span>
         </div>
         <a href="#checkoutFormSection" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-3 rounded-xl text-xs shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition active:scale-95">
             <span>اطلب الآن 🚀</span>
@@ -417,7 +445,7 @@
     </div>
 
     <!-- Floating WhatsApp Button -->
-    <a href="https://wa.me/212773271042?text={{ rawurlencode('السلام عليكم، بغيت نسول على هاد المنتج: ' . $product->name) }}" target="_blank" class="fixed bottom-20 md:bottom-6 left-6 z-50 bg-[#25D366] hover:bg-[#20ba59] text-white w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-2xl md:text-3xl shadow-2xl hover:scale-110 transition-all duration-300">
+    <a href="https://wa.me/212773271042?text={{ rawurlencode('السلام عليكم، بغيت نسول على هاد المنتج: ' . $product->name) }}" target="_blank" class="fixed bottom-20 md:bottom-6 left-6 z-50 bg-[#25D366] hover:bg-[#20ba59] text-white w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-2xl md:text-3xl shadow-2xl pulse-ring hover:scale-110 transition-all duration-300">
         💬
     </a>
 
@@ -428,10 +456,16 @@
         let couponDiscount = 0;
         let couponType = 'fixed';
 
-        function changeImage(src) {
+        function changeMainImage(src, btn) {
             const mainImg = document.getElementById('mainProductDisplay');
             if (mainImg && src) {
                 mainImg.src = src;
+            }
+            if (btn) {
+                document.querySelectorAll('.thumb-btn').forEach(b => {
+                    b.className = 'thumb-btn w-16 h-16 rounded-2xl border-2 border-slate-200 hover:border-slate-400 overflow-hidden flex-shrink-0 bg-slate-50 p-1 transition';
+                });
+                btn.className = 'thumb-btn w-16 h-16 rounded-2xl border-2 border-emerald-500 ring-2 ring-emerald-500/20 overflow-hidden flex-shrink-0 bg-slate-50 p-1 transition';
             }
         }
 
@@ -589,7 +623,7 @@
             captureLead();
         });
 
-        // Voice Note Recording
+        // 🎙️ Voice Note Recording
         let mediaRecorder;
         let audioChunks = [];
         let isRecording = false;
