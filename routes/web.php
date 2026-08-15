@@ -1,10 +1,26 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\ProductController;
+
+// ==========================================
+// 🖼️ Storage Image Direct Serving Route
+// ==========================================
+Route::get('/storage/products/{filename}', function ($filename) {
+    $path = 'products/' . $filename;
+    if (!Storage::disk('public')->exists($path)) {
+        abort(404);
+    }
+    $file = Storage::disk('public')->get($path);
+    $type = Storage::disk('public')->mimeType($path);
+
+    return Response::make($file, 200)->header('Content-Type', $type);
+});
 
 // ==========================================
 // 🛍️ Public Storefront, Checkout & APIs

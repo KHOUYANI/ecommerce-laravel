@@ -12,7 +12,6 @@ class ProductController extends Controller
 {
     public function index()
     {
-        // استعملنا paginate(15) باش تخدم $products->links()
         $products = Product::with('category')->latest()->paginate(15);
         return view('admin.products.index', compact('products'));
     }
@@ -30,28 +29,51 @@ class ProductController extends Controller
             'category_id' => 'required',
             'base_price'  => 'required|numeric|min:0',
             'description' => 'required|string',
-            'image'       => 'nullable|image|max:2048',
+            'image'       => 'nullable|image|max:3072',
+            'images.*'    => 'nullable|image|max:3072',
             'image_url'   => 'nullable|url',
         ]);
 
+        // 1. معالجة الصورة الرئيسية
         $imageUrl = $request->image_url;
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('products', 'public');
-            $imageUrl = '/storage/' . $path;
+            $file = $request->file('image');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->storeAs('products', $filename, 'public');
+            $imageUrl = '/storage/products/' . $filename;
+        }
+
+        // 2. معالجة صور المعرض الإضافية
+        $gallery = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->storeAs('products', $filename, 'public');
+                $gallery[] = '/storage/products/' . $filename;
+            }
+        }
+        if ($request->gallery_urls) {
+            $urls = array_filter(array_map('trim', explode("\n", $request->gallery_urls)));
+            $gallery = array_merge($gallery, $urls);
+        }
+
+        if (!$imageUrl && count($gallery) > 0) {
+            $imageUrl = $gallery[0];
         }
 
         Product::create([
-            'category_id' => $request->category_id,
-            'name'        => $request->name,
-            'slug'        => Str::slug($request->name) . '-' . rand(1000, 9999),
-            'description' => $request->description,
-            'base_price'  => $request->base_price,
-            'image_url'   => $imageUrl,
-            'sku'         => $request->sku ?? ('SKU-' . strtoupper(Str::random(6))),
-            'is_active'   => $request->has('is_active') ? 1 : 0,
+            'category_id'    => $request->category_id,
+            'name'           => $request->name,
+            'slug'           => Str::slug($request->name) . '-' . rand(1000, 9999),
+            'description'    => $request->description,
+            'base_price'     => $request->base_price,
+            'image_url'      => $imageUrl,
+            'gallery_images' => count($gallery) > 0 ? json_encode($gallery) : null,
+            'sku'            => $request->sku ?? ('SKU-' . strtoupper(Str::random(6))),
+            'is_active'      => $request->has('is_active') ? 1 : 0,
         ]);
 
-        return redirect()->route('admin.products.index')->with('success', 'تمت إضافة ونشر المنتج بنجاح!');
+        return redirect()->route('admin.products.index')->with('success', 'تمت إضافة المنتج بنجاح!');
     }
 
     public function storeCategory(Request $request)
