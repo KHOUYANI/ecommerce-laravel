@@ -40,7 +40,7 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-        <!-- Flash Success / Error Messages -->
+        <!-- Flash Success Messages -->
         @if(session('success'))
             <div class="bg-emerald-50 border-r-4 border-emerald-500 p-4 rounded-2xl shadow-sm text-emerald-800 font-bold text-xs flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -61,7 +61,7 @@
                 </div>
                 
                 <div class="text-xs text-slate-500 font-medium">
-                    يمكنك تفعيل/إخفاء المنتجات أو حذفها نهائياً من المتجر
+                    يمكنك تعديل المنتجات، إخفاؤها، أو حذفها نهائياً
                 </div>
             </div>
 
@@ -80,13 +80,11 @@
                     <tbody class="divide-y divide-slate-100 text-xs font-bold">
                         @forelse($products as $product)
                             @php
-                                // معالجة رابط الصورة بذكاء
                                 $imgSrc = $product->image_url;
                                 if ($imgSrc && !str_starts_with($imgSrc, 'http') && !str_starts_with($imgSrc, '/storage/')) {
                                     $imgSrc = '/storage/' . $imgSrc;
                                 }
 
-                                // حساب عدد صور المعرض
                                 $galleryCount = 0;
                                 if (!empty($product->gallery_images)) {
                                     $decoded = is_array($product->gallery_images) ? $product->gallery_images : json_decode($product->gallery_images, true);
@@ -147,7 +145,7 @@
                                     @endif
                                 </td>
 
-                                <!-- Status Badge & Toggle -->
+                                <!-- Status Badge -->
                                 <td class="p-4 text-center">
                                     @if($product->is_active)
                                         <span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-1 rounded-full">
@@ -162,11 +160,17 @@
                                     @endif
                                 </td>
 
-                                <!-- Actions (Toggle Status & Delete) -->
+                                <!-- Actions -->
                                 <td class="p-4 text-center">
                                     <div class="inline-flex items-center justify-center gap-2">
                                         
-                                        <!-- Toggle Status Form -->
+                                        <!-- زر التعديل -->
+                                        <a href="{{ route('admin.products.edit', $product->id) }}" class="bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 p-1.5 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                                            <span>✏️</span>
+                                            <span>تعديل</span>
+                                        </a>
+
+                                        <!-- إخفاء / إظهار -->
                                         <form action="{{ route('admin.products.toggle', $product->id) }}" method="POST">
                                             @csrf
                                             <button type="submit" class="text-xs font-bold px-3 py-1.5 rounded-xl border transition {{ $product->is_active ? 'bg-slate-900 hover:bg-slate-800 text-white border-slate-900' : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600' }}">
@@ -174,11 +178,11 @@
                                             </button>
                                         </form>
 
-                                        <!-- Delete Product Form -->
-                                        <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST" onsubmit="return confirm('⚠️ هل أنت متأكد من حذف المنتج ({{ $product->name }}) نهائياً من المتجر والمخزون؟')">
+                                        <!-- حذف -->
+                                        <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST" onsubmit="return confirm('⚠️ هل أنت متأكد من حذف المنتج ({{ $product->name }}) نهائياً؟')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 hover:border-rose-300 p-1.5 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1" title="حذف المنتج">
+                                            <button type="submit" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 hover:border-rose-300 p-1.5 px-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1">
                                                 <span>🗑️</span>
                                                 <span class="hidden sm:inline">مسح</span>
                                             </button>
@@ -203,7 +207,6 @@
                 </table>
             </div>
 
-            <!-- Pagination -->
             @if($products->hasPages())
                 <div class="p-4 border-t border-slate-100 bg-slate-50/50">
                     {{ $products->links() }}

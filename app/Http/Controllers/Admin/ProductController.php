@@ -25,7 +25,7 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'name'         => 'required|string|max:255',
             'category_id'  => 'required',
             'base_price'   => 'required|numeric|min:0',
@@ -38,12 +38,12 @@ class ProductController extends Controller
 
         $gallery = [];
 
-        // 1. معالجة رابط الصورة المباشر إن وجد
+        // 1. رابط مباشر
         if ($request->filled('image_url')) {
             $gallery[] = $request->image_url;
         }
 
-        // 2. معالجة صورة واحدة مرفوعة
+        // 2. صورة واحدة من الجهاز
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
@@ -51,7 +51,7 @@ class ProductController extends Controller
             $gallery[] = '/storage/products/' . $filename;
         }
 
-        // 3. معالجة عدة صور مرفوعة دفعة واحدة من البيسي
+        // 3. صور متعددة من الجهاز
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
                 if ($file->isValid()) {
@@ -62,7 +62,7 @@ class ProductController extends Controller
             }
         }
 
-        // 4. معالجة الروابط الإضافية
+        // 4. روابط نصية إضافية
         if ($request->filled('gallery_urls')) {
             $urls = array_filter(array_map('trim', explode("\n", str_replace("\r", "", $request->gallery_urls))));
             foreach ($urls as $url) {
@@ -87,14 +87,96 @@ class ProductController extends Controller
             'is_active'      => $request->has('is_active') ? 1 : 0,
         ]);
 
-        return redirect()->route('admin.products.index')->with('success', 'تمت إضافة المنتج مع جميع الصور بنجاح!');
+        return redirect()->route('admin.products.index')->with('success', 'تمت إضافة ونشر المنتج بنجاح!');
+    }
+
+    public function edit($id)
+    {
+        $product = Product::findOrFail($id);
+        $categories = Category::all();
+        return view('admin.products.edit', compact('product', 'categories'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $product = Product::findOrFail($id);
+
+        $request->validate([
+            'name'         => 'required|string|max:255',
+            'category_id'  => 'required',
+            'base_price'   => 'required|numeric|min:0',
+            'description'  => 'required|string',
+            'image'        => 'nullable|image|max:4096',
+            'images.*'     => 'nullable|image|max:4096',
+            'image_url'    => 'nullable|url',
+            'gallery_urls' => 'nullable|string',
+        ]);
+
+        // الحفاظ على الصور القديمة كقاعدة أساسية
+        $gallery = [];
+        if (!empty($product->gallery_images)) {
+            $gallery = is_array($product->gallery_images) ? $product->gallery_images : json_decode($product->gallery_images, true);
+            if (!is_array($gallery)) $gallery = [];
+        }
+
+        if (empty($gallery) && $product->image_url) {
+            $gallery[] = $product->image_url;
+        }
+
+        // إضافة الصور الجديدة دون مسح القديم إلا إذا تم إدخال رابط رئيسي جديد
+        if ($request->filled('image_url')) {
+            if (!in_array($request->image_url, $gallery)) {
+                array_unshift($gallery, $request->image_url);
+            }
+        }
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->storeAs('products', $filename, 'public');
+            array_unshift($gallery, '/storage/products/' . $filename);
+        }
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                if ($file->isValid()) {
+                    $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $file->storeAs('products', $filename, 'public');
+                    $gallery[] = '/storage/products/' . $filename;
+                }
+            }
+        }
+
+        if ($request->filled('gallery_urls')) {
+            $urls = array_filter(array_map('trim', explode("\n", str_replace("\r", "", $request->gallery_urls))));
+            foreach ($urls as $url) {
+                if (!empty($url) && !in_array($url, $gallery)) {
+                    $gallery[] = $url;
+                }
+            }
+        }
+
+        $gallery = array_values(array_unique($gallery));
+        $mainImageUrl = count($gallery) > 0 ? $gallery[0] : $product->image_url;
+
+        $product->update([
+            'category_id'    => $request->category_id,
+            'name'           => $request->name,
+            'description'    => $request->description,
+            'base_price'     => $request->base_price,
+            'image_url'      => $mainImageUrl,
+            'gallery_images' => $gallery,
+            'sku'            => $request->sku ?? $product->sku,
+            'is_active'      => $request->has('is_active') ? 1 : 0,
+        ]);
+
+        return redirect()->route('admin.products.index')->with('success', 'تم تعديل المنتج والاحتفاظ بجميع الصور بنجاح!');
     }
 
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
 
-        // حذف الصور المرفوعة محلياً من التخزين إن وجدت
         if ($product->image_url && str_starts_with($product->image_url, '/storage/products/')) {
             $path = str_replace('/storage/', '', $product->image_url);
             Storage::disk('public')->delete($path);
