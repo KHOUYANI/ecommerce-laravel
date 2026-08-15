@@ -278,8 +278,18 @@
                                     تخفيض 35% 🔥
                                 </span>
 
-                                @if($product->image_url)
-                                    <img src="{{ asset('storage/' . $product->image_url) }}" alt="{{ $product->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                @php
+                                    $imgSrc = $product->image_url;
+                                    if ($imgSrc && !str_starts_with($imgSrc, 'http') && !str_starts_with($imgSrc, '/storage/')) {
+                                        $imgSrc = '/storage/' . $imgSrc;
+                                    }
+                                @endphp
+
+                                @if($imgSrc)
+                                    <img src="{{ $imgSrc }}" 
+                                         alt="{{ $product->name }}" 
+                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800';">
                                 @else
                                     <div class="text-7xl">
                                         @if(str_contains(strtolower($product->name), 'watch')) ⌚ 
