@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -74,7 +75,7 @@ class ProductController extends Controller
         $gallery = array_values(array_unique($gallery));
         $mainImageUrl = count($gallery) > 0 ? $gallery[0] : null;
 
-        $product = Product::create([
+        Product::create([
             'category_id'    => $request->category_id,
             'name'           => $request->name,
             'slug'           => Str::slug($request->name) . '-' . rand(1000, 9999),
@@ -87,6 +88,30 @@ class ProductController extends Controller
         ]);
 
         return redirect()->route('admin.products.index')->with('success', 'تمت إضافة المنتج مع جميع الصور بنجاح!');
+    }
+
+    public function destroy($id)
+    {
+        $product = Product::findOrFail($id);
+
+        // حذف الصور المرفوعة محلياً من التخزين إن وجدت
+        if ($product->image_url && str_starts_with($product->image_url, '/storage/products/')) {
+            $path = str_replace('/storage/', '', $product->image_url);
+            Storage::disk('public')->delete($path);
+        }
+
+        if (!empty($product->gallery_images) && is_array($product->gallery_images)) {
+            foreach ($product->gallery_images as $gImg) {
+                if ($gImg && str_starts_with($gImg, '/storage/products/')) {
+                    $path = str_replace('/storage/', '', $gImg);
+                    Storage::disk('public')->delete($path);
+                }
+            }
+        }
+
+        $product->delete();
+
+        return redirect()->route('admin.products.index')->with('success', 'تم حذف المنتج بنجاح نهائياً!');
     }
 
     public function storeCategory(Request $request)
