@@ -9,6 +9,7 @@ use App\Models\OrderItem;
 use App\Models\Blacklist;
 use App\Models\Coupon;
 use App\Models\Lead;
+use App\Models\Review;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 
@@ -17,7 +18,7 @@ class ShopController extends Controller
     // Page d'accueil / Boutique
     public function index()
     {
-        $products = Product::with(['variants', 'category'])
+        $products = Product::with(['variants', 'category', 'reviews'])
             ->where('is_active', true)
             ->latest()
             ->get();
@@ -28,13 +29,14 @@ class ShopController extends Controller
     // Page de Détail Produit (Landing Page COD)
     public function show($slug)
     {
-        // كيبحث بالـ slug أو بـ id أو بـ اسم المنتج لتفادي أي 404
-        $product = Product::with(['category', 'variants'])
-            ->where('slug', $slug)
-            ->orWhere('slug', Str::slug($slug))
-            ->orWhere('id', $slug)
-            ->orWhere('name', urldecode($slug))
-            ->firstOrFail();
+        $product = Product::with(['category', 'variants', 'reviews' => function($q) {
+            $q->latest();
+        }])
+        ->where('slug', $slug)
+        ->orWhere('slug', Str::slug($slug))
+        ->orWhere('id', $slug)
+        ->orWhere('name', urldecode($slug))
+        ->firstOrFail();
 
         return view('shop.product', compact('product'));
     }
@@ -58,7 +60,7 @@ class ShopController extends Controller
         ]);
     }
 
-    // التقاط السلات المتروكة بالخلفية بدون إزعاج الزبون
+    // التقاط السلات المتروكة بالخلفية
     public function saveLead(Request $request)
     {
         $phone = preg_replace('/[^0-9]/', '', $request->phone);
@@ -67,8 +69,8 @@ class ShopController extends Controller
                 ['customer_phone' => $phone],
                 [
                     'product_id'    => $request->product_id,
-                    'customer_name' => $request->name,
-                    'city'          => $request->city,
+                    'customer_name' => $request->name ?? 'زبون مهتم',
+                    'city'          => $request->city ?? 'غير محدد',
                 ]
             );
             return response()->json(['status' => 'saved']);
@@ -76,47 +78,97 @@ class ShopController extends Controller
         return response()->json(['status' => 'ignored']);
     }
 
+    // تأكيد ومعالجة الطلب
     public function storeOrder(Request $request)
     {
         $validated = $request->validate([
-            'variant_id'      => 'required|exists:product_variants,id',
-            'quantity'        => 'required|integer|min:1',
+            'product_id'      => 'nullable|exists:products,id',
+            'variant_id'      => 'nullable',
+            'quantity'        => 'nullable|integer|min:1',
+            'bundle_option'   => 'nullable|integer|min:1',
             'customer_name'   => 'required|string|max:255',
-            'customer_phone'  => 'required|string|max:20',
+            'customer_phone'  => 'required|string|max:30',
             'city'            => 'required|string|max:100',
             'address'         => 'required|string',
             'coupon_code'     => 'nullable|string',
         ]);
 
-        // 🛑 1. فحص الهاتف في القائمة السوداء والنوامر الوهمية
+        // 🛑 1. فحص الهاتف في القائمة السوداء
         $cleanPhone = preg_replace('/[^0-9]/', '', $validated['customer_phone']);
         $isBlacklisted = Blacklist::where('phone', $cleanPhone)->exists();
         
-        if ($isBlacklisted || in_array($cleanPhone, ['0600000000', '0700000000', '1234567890']) || strlen($cleanPhone) < 10) {
-            return redirect()->back()->with('error', 'عذراً، تعذر إتمام الطلب. المرجو إدخال رقم هاتف صحيح وشغال لتأكيد التوصيل.');
+        if ($isBlacklisted || in_array($cleanPhone, ['0600000000', '0700000000', '1234567890']) || strlen($cleanPhone) < 9) {
+            return redirect()->back()->with('error', 'عذراً، تعذر إتمام الطلب. المرجو إدخال رقم هاتف صحيح وشغال لتأكيد التوصيل.')->withInput();
         }
 
-        $variant = ProductVariant::with('product')->findOrFail($validated['variant_id']);
+        // 2. تحديد المنتج والفاريانت والكمية
+        $qty = (int) ($request->bundle_option ?? $request->quantity ?? 1);
+        $variant = null;
+        $product = null;
 
-        if ($variant->stock_quantity < $validated['quantity']) {
-            return redirect()->back()->with('error', 'عذراً، الكمية المتوفرة في المخزون غير كافية.');
-        }
-
-        $unitPrice = $variant->product->base_price + $variant->additional_price;
-        $subtotal = $unitPrice * $validated['quantity'];
-        $discount = 0;
-
-        if (!empty($validated['coupon_code'])) {
-            $coupon = Coupon::where('code', strtoupper(trim($validated['coupon_code'])))->where('is_active', true)->first();
-            if ($coupon) {
-                $discount = ($coupon->type === 'percent') ? ($subtotal * ($coupon->value / 100)) : $coupon->value;
+        if ($request->filled('variant_id')) {
+            $variant = ProductVariant::with('product')->find($request->variant_id);
+            if ($variant) {
+                $product = $variant->product;
             }
         }
 
-        $totalAmount = max(0, $subtotal - $discount);
+        if (!$product && $request->filled('product_id')) {
+            $product = Product::with('variants')->findOrFail($request->product_id);
+            $variant = $product->variants->first();
+        }
 
+        if (!$product) {
+            return redirect()->back()->with('error', 'المرجو اختيار المنتج لتأكيد الطلب.')->withInput();
+        }
+
+        // 3. حساب السعر الأساسي والخصومات
+        $unitPrice = (float) $product->base_price;
+        if ($variant && isset($variant->additional_price)) {
+            $unitPrice += (float) $variant->additional_price;
+        }
+
+        $subtotal = $unitPrice * $qty;
+
+        // خصم الباقات التلقائي
+        if ($qty == 2) {
+            $subtotal = $subtotal * 0.85; // خصم 15%
+        } elseif ($qty >= 3) {
+            $subtotal = $subtotal * 0.75; // خصم 25%
+        }
+
+        // حساب مصاريف الشحن
+        $shipping = 0;
+        if ($qty < 2) {
+            $cityClean = mb_strtolower(trim($validated['city']));
+            if (in_array($cityClean, ['casablanca', 'rabat', 'azrou', 'الدار البيضاء', 'الرباط', 'أزرو', 'ازرو'])) {
+                $shipping = 0;
+            } elseif (in_array($cityClean, ['fès', 'fes', 'meknès', 'meknes', 'فاس', 'مكناس'])) {
+                $shipping = 15;
+            } elseif (in_array($cityClean, ['marrakech', 'tanger', 'tangier', 'مراكش', 'طنجة'])) {
+                $shipping = 20;
+            } elseif (in_array($cityClean, ['laâyoune', 'layoune', 'العيون'])) {
+                $shipping = 35;
+            } else {
+                $shipping = 25;
+            }
+        }
+
+        // تطبيق كود الخصم
+        $discount = 0;
+        if (!empty($validated['coupon_code'])) {
+            $coupon = Coupon::where('code', strtoupper(trim($validated['coupon_code'])))->where('is_active', true)->first();
+            if ($coupon) {
+                $discount = ($coupon->type === 'percent') ? ($subtotal * ($coupon->value / 100)) : (float) $coupon->value;
+            }
+        }
+
+        $totalAmount = max(0, $subtotal + $shipping - $discount);
+        $trackingNumber = 'COD-' . strtoupper(Str::random(8));
+
+        // 4. إنشاء الطلب
         $order = Order::create([
-            'tracking_number' => 'COD-' . strtoupper(Str::random(8)),
+            'tracking_number' => $trackingNumber,
             'customer_name'   => $validated['customer_name'],
             'customer_phone'  => $validated['customer_phone'],
             'city'            => $validated['city'],
@@ -126,20 +178,24 @@ class ShopController extends Controller
             'admin_notes'     => $discount > 0 ? "خصم كوبون: {$discount} DH" : null,
         ]);
 
+        // 5. حفظ عناصر الطلب
         OrderItem::create([
             'order_id'           => $order->id,
-            'product_variant_id' => $variant->id,
-            'quantity'           => $validated['quantity'],
+            'product_id'         => $product->id,
+            'product_variant_id' => $variant ? $variant->id : null,
+            'quantity'           => $qty,
             'unit_price'         => $unitPrice,
         ]);
 
-        $variant->decrement('stock_quantity', $validated['quantity']);
+        if ($variant && $variant->stock_quantity >= $qty) {
+            $variant->decrement('stock_quantity', $qty);
+        }
 
-        // تحديث حالة السلة المتروكة إن وجدت بأنها تمت
+        // تحديث حالة السلة المتروكة
         Lead::where('customer_phone', $cleanPhone)->update(['is_recovered' => true]);
 
         // 🔔 إشعار فوري تيليغرام
-        $this->sendTelegramNotification($order, $variant, $validated['quantity']);
+        $this->sendTelegramNotification($order, $product, $qty);
 
         return redirect()->route('order.success', $order->tracking_number);
     }
@@ -147,10 +203,9 @@ class ShopController extends Controller
     // Page de Confirmation / Thank You Page
     public function orderSuccess($tracking)
     {
-        $order = Order::with('items.variant.product')->where('tracking_number', $tracking)->firstOrFail();
+        $order = Order::with(['items.product', 'items.variant.product'])->where('tracking_number', $tracking)->firstOrFail();
         
-        // جلب منتج مقترح للـ Upsell (غير المنتج الذي اشتراه)
-        $purchasedProductIds = $order->items->pluck('variant.product_id')->toArray();
+        $purchasedProductIds = $order->items->pluck('product_id')->filter()->toArray();
         $upsellProduct = Product::with('variants')
             ->whereNotIn('id', $purchasedProductIds)
             ->where('is_active', true)
@@ -163,23 +218,24 @@ class ShopController extends Controller
     public function addUpsell(Request $request, $tracking)
     {
         $request->validate([
-            'variant_id' => 'required|exists:product_variants,id',
+            'product_id' => 'required|exists:products,id',
+            'variant_id' => 'nullable',
         ]);
 
         $order = Order::where('tracking_number', $tracking)->firstOrFail();
-        $variant = ProductVariant::with('product')->findOrFail($request->variant_id);
+        $product = Product::findOrFail($request->product_id);
 
-        // خصم 40% على منتج الـ Upsell
-        $discountedPrice = round(($variant->product->base_price + $variant->additional_price) * 0.6, 2);
+        $upsellPrice = round($product->base_price * 0.8, 2); // خصم 20%
 
         OrderItem::create([
             'order_id'           => $order->id,
-            'product_variant_id' => $variant->id,
+            'product_id'         => $product->id,
+            'product_variant_id' => $request->variant_id ?? null,
             'quantity'           => 1,
-            'unit_price'         => $discountedPrice,
+            'unit_price'         => $upsellPrice,
         ]);
 
-        $order->increment('total_amount', $discountedPrice);
+        $order->increment('total_amount', $upsellPrice);
 
         return redirect()->route('order.success', $order->tracking_number)->with('upsell_added', 'تمت إضافة العرض الحصري إلى طلبيتك بنجاح وتحديث المبلغ الإجمالي!');
     }
@@ -192,10 +248,10 @@ class ShopController extends Controller
 
     public function findOrder(Request $request)
     {
-        $term = trim($request->input('search_term'));
+        $term = trim($request->input('search_term') ?? $request->input('search'));
         $cleanPhone = preg_replace('/[^0-9]/', '', $term);
 
-        $order = \App\Models\Order::with('items.variant.product')
+        $order = Order::with(['items.product', 'items.variant.product'])
             ->where('tracking_number', $term)
             ->orWhere('customer_phone', 'like', "%{$cleanPhone}%")
             ->latest()
@@ -208,17 +264,21 @@ class ShopController extends Controller
         return view('shop.track', compact('order'));
     }
 
- 
-
-    // طلب مباشر وسريع بالواتساب مع تسجيله في النظام
+    // طلب مباشر وسريع بالواتساب
     public function quickWhatsappOrder(Request $request)
     {
-        $request->validate([
-            'variant_id' => 'required|exists:product_variants,id',
-            'city'       => 'nullable|string',
-        ]);
+        $product = null;
+        if ($request->filled('variant_id')) {
+            $variant = ProductVariant::with('product')->find($request->variant_id);
+            if ($variant) $product = $variant->product;
+        }
 
-        $variant = ProductVariant::with('product')->findOrFail($request->variant_id);
+        if (!$product && $request->filled('product_id')) {
+            $product = Product::find($request->product_id);
+        }
+
+        $prodName = $product ? $product->name : 'منتج من المتجر';
+        $prodPrice = $product ? $product->base_price : '0';
         $tracking = 'COD-' . strtoupper(Str::random(8));
 
         $order = Order::create([
@@ -227,38 +287,63 @@ class ShopController extends Controller
             'customer_phone'  => '0600000000',
             'city'            => $request->city ?? 'غير محدد',
             'address'         => 'طلب سريع عبر الواتساب',
-            'total_amount'    => $variant->product->base_price + $variant->additional_price,
+            'total_amount'    => (float) $prodPrice,
             'status'          => 'nouveau',
             'admin_notes'     => 'تم إنشاؤه عبر زر الواتساب السريع',
         ]);
 
-        OrderItem::create([
-            'order_id'           => $order->id,
-            'product_variant_id' => $variant->id,
-            'quantity'           => 1,
-            'unit_price'         => $variant->product->base_price + $variant->additional_price,
-        ]);
+        if ($product) {
+            OrderItem::create([
+                'order_id'   => $order->id,
+                'product_id' => $product->id,
+                'quantity'   => 1,
+                'unit_price' => (float) $prodPrice,
+            ]);
+        }
 
-        $storeWhatsapp = "212773271042"; // نمرتك د الواتساب
+        $storeWhatsapp = "212773271042";
         $text = "السلام عليكم، بغيت نطلب هاد المنتج بشكل سريع:\n\n"
-              . "🛍️ المنتج: " . $variant->product->name . "\n"
-              . "💵 الثمن: " . ($variant->product->base_price + $variant->additional_price) . " DH\n"
+              . "🛍️ المنتج: " . $prodName . "\n"
+              . "💵 الثمن: " . $prodPrice . " DH\n"
               . "📦 كود الطلب: " . $tracking . "\n\n"
-              . "ها هما معلوماتي:\n"
+              . "معلومات التوصيل ديالي:\n"
               . "- الاسم:\n"
-              . "- الهاتف:\n"
               . "- المدينة والعنوان:";
 
         return redirect("https://wa.me/{$storeWhatsapp}?text=" . urlencode($text));
     }
 
+    // إضافة تقييم للمنتج
+    public function storeReview(Request $request, $productId)
+    {
+        $request->validate([
+            'reviewer_name' => 'required|string|max:255',
+            'reviewer_city' => 'nullable|string|max:255',
+            'rating'        => 'required|integer|min:1|max:5',
+            'comment'       => 'required|string',
+        ]);
+
+        Review::create([
+            'product_id'    => $productId,
+            'reviewer_name' => $request->reviewer_name,
+            'reviewer_city' => $request->reviewer_city ?? 'المغرب',
+            'rating'        => $request->rating,
+            'comment'       => $request->comment,
+            'is_approved'   => 1,
+        ]);
+
+        return redirect()->back()->with('review_success', 'شكراً لك! تم نشر تقييمك بنجاح.');
+    }
+
     // 🔔 إرسال إشعار تيليغرام
-    private function sendTelegramNotification($order, $variant, $quantity)
+    private function sendTelegramNotification($order, $product, $quantity)
     {
         $botToken = env('TELEGRAM_BOT_TOKEN');
         $chatId = env('TELEGRAM_CHAT_ID');
 
         if (!$botToken || !$chatId) return;
+
+        $productName = is_object($product) ? $product->name : 'منتج';
 
         $msg = "🚀 *طلبية جديدة في MED EXPRESS!* \n\n"
              . "📦 *كود التتبع:* `{$order->tracking_number}`\n"
@@ -266,11 +351,10 @@ class ShopController extends Controller
              . "📞 *الهاتف:* `{$order->customer_phone}`\n"
              . "📍 *المدينة:* {$order->city}\n"
              . "🏠 *العنوان:* {$order->address}\n"
-             . "🛍️ *المنتج:* {$variant->product->name} (x{$quantity})\n"
+             . "🛍️ *المنتج:* {$productName} (x{$quantity})\n"
              . "💵 *المبلغ الإجمالي:* *{$order->total_amount} DH*\n\n"
              . "⚡ المرجو تأكيد الطلبية عبر لوحة التحكم.";
 
         @file_get_contents("https://api.telegram.org/bot{$botToken}/sendMessage?chat_id={$chatId}&text=" . urlencode($msg) . "&parse_mode=Markdown");
     }
-    
 }
