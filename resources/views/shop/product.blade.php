@@ -304,18 +304,18 @@
                     <div>
                         <label class="block text-slate-700 mb-2">طريقة الأداء والدفع المفضلة لديك:</label>
                         <div class="grid grid-cols-2 gap-2.5">
-                            <label class="pay-method-card border-2 border-emerald-500 bg-emerald-50/50 p-3 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition text-center space-y-1">
-                                <input type="radio" name="payment_method" value="cod" checked class="hidden" onchange="selectPayMethod(this)">
-                                <span class="text-xl">💵</span>
+                            <label id="label_cod" class="pay-method-card border-2 border-emerald-500 bg-emerald-50/50 p-3.5 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition text-center space-y-1">
+                                <input type="radio" name="payment_method" id="radio_cod" value="cod" checked class="sr-only" onchange="selectPayMethod('cod')">
+                                <span class="text-2xl">💵</span>
                                 <span class="font-black text-slate-900 text-xs block">الدفع عند الاستلام</span>
                                 <span class="text-[10px] text-slate-500 font-normal">بعد فحص ومعاينة الطلب</span>
                             </label>
 
-                            <label class="pay-method-card border border-slate-200 bg-white p-3 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition text-center space-y-1">
-                                <input type="radio" name="payment_method" value="card" class="hidden" onchange="selectPayMethod(this)">
-                                <span class="text-xl">💳</span>
-                                <span class="font-black text-slate-900 text-xs block">بطاقة بنكية (Stripe)</span>
-                                <span class="text-[10px] text-emerald-600 font-bold">دفع آمن ومشفر 100%</span>
+                            <label id="label_card" class="pay-method-card border border-slate-200 bg-white p-3.5 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition text-center space-y-1">
+                                <input type="radio" name="payment_method" id="radio_card" value="card" class="sr-only" onchange="selectPayMethod('card')">
+                                <span class="text-2xl">💳</span>
+                                <span class="font-black text-slate-900 text-xs block">بطاقة بنكية (YouCan Pay)</span>
+                                <span class="text-[10px] text-blue-600 font-bold">دفع آمن ومشفر 100%</span>
                             </label>
                         </div>
                     </div>
@@ -486,20 +486,25 @@
         let couponDiscount = 0;
         let couponType = 'fixed';
 
-        function selectPayMethod(radio) {
-            document.querySelectorAll('.pay-method-card').forEach(c => {
-                c.classList.remove('border-emerald-500', 'bg-emerald-50/50');
-                c.classList.add('border-slate-200', 'bg-white');
-            });
-            const parent = radio.closest('.pay-method-card');
-            parent.classList.remove('border-slate-200', 'bg-white');
-            parent.classList.add('border-emerald-500', 'bg-emerald-50/50');
-
+        function selectPayMethod(method) {
+            const labelCod = document.getElementById('label_cod');
+            const labelCard = document.getElementById('label_card');
+            const radioCod = document.getElementById('radio_cod');
+            const radioCard = document.getElementById('radio_card');
             const submitBtn = document.getElementById('submitOrderBtn');
-            if (radio.value === 'card') {
+
+            if (method === 'card') {
+                radioCard.checked = true;
+                labelCard.className = "pay-method-card border-2 border-blue-500 bg-blue-50/60 p-3.5 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition text-center space-y-1";
+                labelCod.className = "pay-method-card border border-slate-200 bg-white p-3.5 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition text-center space-y-1";
+
                 submitBtn.innerText = "الانتقال للدفع الآمن بالبطاقة 💳";
                 submitBtn.className = "w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-600/30 transition text-sm flex items-center justify-center gap-2";
             } else {
+                radioCod.checked = true;
+                labelCod.className = "pay-method-card border-2 border-emerald-500 bg-emerald-50/50 p-3.5 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition text-center space-y-1";
+                labelCard.className = "pay-method-card border border-slate-200 bg-white p-3.5 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition text-center space-y-1";
+
                 submitBtn.innerText = "تأكيد الطلب الآن 🛍️";
                 submitBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-emerald-600/30 transition text-sm flex items-center justify-center gap-2";
             }
