@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تم تأكيد طلبك بنجاح 🎉 | MED EXPRESS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
@@ -10,6 +11,7 @@
     @php
         $fbPixel = \App\Models\Setting::get('fb_pixel_id');
         $tiktokPixel = \App\Models\Setting::get('tiktok_pixel_id');
+        $orderTotal = $order->total_amount ?? $order->total_price ?? 0;
     @endphp
 
     @if($fbPixel)
@@ -23,7 +25,7 @@
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
     fbq('init', '{{ $fbPixel }}');
-    fbq('track', 'Purchase', { value: {{ $order->total_amount }}, currency: 'MAD' });
+    fbq('track', 'Purchase', { value: {{ $orderTotal }}, currency: 'MAD' });
     </script>
     @endif
 
@@ -33,7 +35,7 @@
       w.TiktokAnalyticsObject=t;var tt=w[t]=w[t]||[];tt.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],tt.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<tt.methods.length;i++)tt.setAndDefer(tt,tt.methods[i]);tt.instance=function(t){for(var e=tt._i[t]||[],n=0;n<tt.methods.length;n++)tt.setAndDefer(e,tt.methods[n]);return e};tt.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";tt._i=tt._i||{},tt._i[e]=[],tt._i[e]._u=i,tt._t=tt._t||{},tt._t[e]=+new Date,tt._o=tt._o||{},tt._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
       tt.load('{{ $tiktokPixel }}');
       tt.page();
-      ttq.track('CompletePayment', { value: {{ $order->total_amount }}, currency: 'MAD' });
+      ttq.track('CompletePayment', { value: {{ $orderTotal }}, currency: 'MAD' });
     }(window, document, 'ttq');
     </script>
     @endif
@@ -50,7 +52,7 @@
 
         <!-- Thank You Main Card -->
         <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 text-center space-y-4">
-            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner font-black">
                 ✓
             </div>
             
@@ -70,7 +72,7 @@
 
             <!-- WhatsApp Instant Confirmation Button -->
             @php
-                $confMsg = "السلام عليكم، أنا الزبون " . $order->customer_name . "، قمت بطلب المنتج للتو بكود تتبع " . $order->tracking_number . " بمبلغ " . $order->total_amount . " DH. أؤكد طلبيتي للشحن وشكراً.";
+                $confMsg = "السلام عليكم، أنا الزبون " . $order->customer_name . "، قمت بطلب المنتج للتو بكود تتبع " . $order->tracking_number . " بمبلغ " . $orderTotal . " DH. أؤكد طلبيتي للشحن وشكراً.";
             @endphp
             <a href="https://wa.me/212773271042?text={{ rawurlencode($confMsg) }}" target="_blank" class="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-black py-3.5 rounded-2xl shadow-md transition flex items-center justify-center gap-2 text-xs">
                 <span>💬 اضغط هنا لتأكيد طلبك فوراً عبر الواتساب وتسريع الشحن</span>
@@ -80,28 +82,39 @@
             <div class="border-t border-slate-100 pt-4 text-right space-y-2 text-xs">
                 <h3 class="font-black text-slate-900 mb-2">تفاصيل الطلبية:</h3>
                 @foreach($order->items as $item)
+                    @php
+                        $prodTitle = $item->variant->product->name ?? $item->product->name ?? 'منتج';
+                    @endphp
                     <div class="flex justify-between items-center text-slate-600 bg-slate-50 p-3 rounded-xl">
-                        <span class="font-bold">• {{ $item->variant->product->name ?? 'منتج' }} (x{{ $item->quantity }})</span>
+                        <span class="font-bold">• {{ $prodTitle }} (x{{ $item->quantity }})</span>
                         <span class="font-mono font-black text-slate-900">{{ $item->unit_price * $item->quantity }} DH</span>
                     </div>
                 @endforeach
                 <div class="border-t pt-2 flex justify-between items-center font-black text-sm text-slate-900">
                     <span>المجموع الإجمالي للدفع عند الاستلام:</span>
-                    <span class="text-emerald-600 font-black text-base">{{ $order->total_amount }} DH</span>
+                    <span class="text-emerald-600 font-black text-base">{{ $orderTotal }} DH</span>
                 </div>
             </div>
         </div>
 
         <!-- 🎁 1-Click Post-Purchase Native Order Upsell -->
         @if(isset($upsellProduct) && $upsellProduct)
+            @php
+                $uImg = $upsellProduct->image_url;
+                if ($uImg && !str_starts_with($uImg, 'http') && !str_starts_with($uImg, '/storage/')) {
+                    $uImg = '/storage/' . $uImg;
+                }
+                $uVariant = $upsellProduct->variants->first();
+                $uVariantId = $uVariant ? $uVariant->id : '';
+            @endphp
             <div class="bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-3xl p-6 sm:p-8 shadow-xl space-y-4 relative overflow-hidden">
                 <span class="bg-white/20 text-white font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
                     ⚡ عرض خاص جداً قبل مغادرة الصفحة (خصم 40%)
                 </span>
                 <div class="flex flex-col sm:flex-row items-center gap-5 pt-2">
                     <div class="w-24 h-24 bg-white rounded-2xl p-2 shrink-0 flex items-center justify-center overflow-hidden">
-                        @if($upsellProduct->image_url)
-                            <img src="{{ asset('storage/' . $upsellProduct->image_url) }}" class="w-full h-full object-cover rounded-xl">
+                        @if($uImg)
+                            <img src="{{ $uImg }}" class="w-full h-full object-contain rounded-xl" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800';">
                         @else
                             <span class="text-3xl">🎁</span>
                         @endif
@@ -119,7 +132,8 @@
 
                 <form action="{{ route('order.upsell', $order->tracking_number) }}" method="POST">
                     @csrf
-                    <input type="hidden" name="variant_id" value="{{ $upsellProduct->variants->first()->id }}">
+                    <input type="hidden" name="product_id" value="{{ $upsellProduct->id }}">
+                    <input type="hidden" name="variant_id" value="{{ $uVariantId }}">
                     <button type="submit" class="w-full bg-slate-900 hover:bg-black text-white font-black py-4 rounded-2xl shadow-lg transition duration-200 text-xs flex items-center justify-center gap-2 mt-2">
                         <span>➕ أضف هذا العرض إلى طلبيتي بضغطة زر واحدة (بدون إعادة إدخال المعلومات)</span>
                     </button>
