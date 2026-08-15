@@ -12,8 +12,7 @@ use App\Models\Lead;
 use App\Models\Review;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Stripe\Stripe;
-use Stripe\Checkout\Session as StripeSession;
+use Illuminate\Support\Facades\Http;
 
 class ShopController extends Controller
 {
@@ -200,30 +199,52 @@ class ShopController extends Controller
 
         Lead::where('customer_phone', $cleanPhone)->update(['is_recovered' => true]);
 
+        // 💳 التعامل مع أداء YouCan Pay
         if ($validated['payment_method'] === 'card') {
-            try {
-                Stripe::setApiKey(env('STRIPE_SECRET'));
+            $privateKey = env('YOUCAN_PRIVATE_KEY');
 
-                $session = StripeSession::create([
-                    'payment_method_types' => ['card'],
-                    'line_items' => [[
-                        'price_data' => [
-                            'currency' => 'mad',
-                            'product_data' => [
-                                'name' => $product->name . ' (x' . $qty . ')',
-                            ],
-                            'unit_amount' => (int)($totalAmount * 100),
+            if ($privateKey) {
+                try {
+                    $isSandbox = str_contains($privateKey, 'sandbox') || env('YOUCAN_SANDBOX', true);
+                    $endpoint = $isSandbox ? 'https://pay.youcan.shop/api/tokenize' : 'https://pay.youcan.shop/api/tokenize';
+
+                    $nameParts = explode(' ', trim($validated['customer_name']), 2);
+                    $firstName = $nameParts[0] ?? 'Client';
+                    $lastName = $nameParts[1] ?? 'Client';
+
+                    $response = Http::withHeaders([
+                        'Authorization' => 'Bearer ' . $privateKey,
+                        'Accept'        => 'application/json',
+                    ])->post($endpoint, [
+                        'pri_key'     => $privateKey,
+                        'amount'      => (int)($totalAmount * 100), // المبلغ بالسنتيم
+                        'currency'    => 'MAD',
+                        'order_id'    => $order->tracking_number,
+                        'success_url' => route('youcan.callback', ['tracking' => $order->tracking_number]) . '?status=success',
+                        'error_url'   => route('shop.product', $product->slug ?? $product->id),
+                        'customer'    => [
+                            'name'         => $validated['customer_name'],
+                            'address'      => $validated['address'],
+                            'zip_code'     => '53000',
+                            'city'         => $validated['city'],
+                            'state'        => $validated['city'],
+                            'country_code' => 'MA',
+                            'phone'        => $validated['customer_phone'],
+                            'email'        => 'customer_' . $order->id . '@medexpress.ma',
                         ],
-                        'quantity' => 1,
-                    ]],
-                    'mode' => 'payment',
-                    'success_url' => route('stripe.success', ['tracking' => $order->tracking_number]) . '?session_id={CHECKOUT_SESSION_ID}',
-                    'cancel_url' => route('shop.product', $product->slug ?? $product->id),
-                ]);
+                    ]);
 
-                return redirect($session->url);
-            } catch (\Exception $e) {
-                return redirect()->route('order.success', $order->tracking_number);
+                    if ($response->successful() && isset($response->json()['token']['id'])) {
+                        $token = $response->json()['token']['id'];
+                        $payUrl = $isSandbox 
+                            ? "https://pay.youcan.shop/sandbox/payment-gateways/tokenize/{$token}"
+                            : "https://pay.youcan.shop/payment-gateways/tokenize/{$token}";
+
+                        return redirect($payUrl);
+                    }
+                } catch (\Exception $e) {
+                    return redirect()->route('order.success', $order->tracking_number);
+                }
             }
         }
 
@@ -231,12 +252,14 @@ class ShopController extends Controller
         return redirect()->route('order.success', $order->tracking_number);
     }
 
-    public function stripeSuccess(Request $request, $tracking)
+    public function youcanCallback(Request $request, $tracking)
     {
         $order = Order::where('tracking_number', $tracking)->firstOrFail();
+        
         $order->update([
             'payment_status' => 'paid',
-            'status'         => 'confirme'
+            'status'         => 'confirme',
+            'admin_notes'    => ($order->admin_notes ? $order->admin_notes . ' | ' : '') . 'تم الأداء بنجاح عبر YouCan Pay (Carte Bancaire)'
         ]);
 
         return redirect()->route('order.success', $order->tracking_number);
@@ -420,7 +443,7 @@ class ShopController extends Controller
         if (!$botToken || !$chatId) return;
 
         $productName = is_object($product) ? $product->name : 'منتج';
-        $payMethod = $order->payment_method === 'card' ? '💳 بطاقة بنكية' : '💵 الدفع عند الاستلام (COD)';
+        $payMethod = $order->payment_method === 'card' ? '💳 بطاقة بنكية (YouCan Pay)' : '💵 الدفع عند الاستلام (COD)';
 
         $msg = "🚀 *طلبية جديدة في MED EXPRESS!* \n\n"
              . "📦 *كود التتبع:* `{$order->tracking_number}`\n"
