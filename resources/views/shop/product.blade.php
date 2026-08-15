@@ -63,6 +63,21 @@
         </div>
     </header>
 
+    @php
+        $mainImg = $product->image_url;
+        if ($mainImg && !str_starts_with($mainImg, 'http') && !str_starts_with($mainImg, '/storage/')) {
+            $mainImg = '/storage/' . $mainImg;
+        }
+
+        $gallery = [];
+        if (!empty($product->gallery_images)) {
+            $decoded = json_decode($product->gallery_images, true);
+            if (is_array($decoded)) {
+                $gallery = $decoded;
+            }
+        }
+    @endphp
+
     <main class="max-w-5xl mx-auto px-4 py-8">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
             
@@ -74,14 +89,32 @@
                     <span id="countdownTimer" class="font-mono bg-amber-200 text-amber-950 px-2.5 py-1 rounded-lg">04:22:15</span>
                 </div>
 
-                <div class="h-80 bg-slate-50 rounded-2xl flex items-center justify-center overflow-hidden border">
-                    @if($product->image_url)
-                        <img src="{{ asset('storage/' . $product->image_url) }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
-                    @else
-                        <div class="text-8xl">
-                            @if(str_contains(strtolower($product->name), 'watch')) ⌚ 
-                            @elseif(str_contains(strtolower($product->name), 'hoodie')) 👕 
-                            @else 📦 @endif
+                <!-- Product Display Image + Gallery Support -->
+                <div class="space-y-3">
+                    <div class="h-80 bg-slate-50 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-200 relative">
+                        <img id="mainProductDisplay" 
+                             src="{{ $mainImg ?: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800' }}" 
+                             alt="{{ $product->name }}" 
+                             class="w-full h-full object-contain transition duration-300"
+                             onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800';">
+                    </div>
+
+                    @if(count($gallery) > 0)
+                        <div class="flex items-center gap-2 overflow-x-auto pb-1">
+                            <button type="button" onclick="changeImage('{{ $mainImg }}')" class="w-14 h-14 rounded-xl border-2 border-emerald-500 overflow-hidden flex-shrink-0 bg-slate-50">
+                                <img src="{{ $mainImg }}" class="w-full h-full object-cover">
+                            </button>
+                            @foreach($gallery as $gImg)
+                                @php
+                                    $thumbSrc = $gImg;
+                                    if ($thumbSrc && !str_starts_with($thumbSrc, 'http') && !str_starts_with($thumbSrc, '/storage/')) {
+                                        $thumbSrc = '/storage/' . $thumbSrc;
+                                    }
+                                @endphp
+                                <button type="button" onclick="changeImage('{{ $thumbSrc }}')" class="w-14 h-14 rounded-xl border border-slate-200 hover:border-emerald-500 overflow-hidden flex-shrink-0 bg-slate-50 transition">
+                                    <img src="{{ $thumbSrc }}" class="w-full h-full object-cover">
+                                </button>
+                            @endforeach
                         </div>
                     @endif
                 </div>
@@ -179,7 +212,7 @@
                     <p class="text-[11px] text-slate-400 mt-1">الدفع عند الاستلام مع فحص المنتج قبل الأداء</p>
                 </div>
 
-                <!-- 🎙️ Voice Note Order Box -->
+                <!-- Voice Note Order Box -->
                 <div class="bg-slate-900 text-white p-4 rounded-2xl mb-4 space-y-2 border border-slate-700">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
@@ -196,7 +229,7 @@
                     <div id="voiceStatusMsg" class="text-[10px] text-slate-300 hidden text-center"></div>
                 </div>
 
-                <!-- 🚚 Interactive Free Shipping Progress Bar -->
+                <!-- Free Shipping Progress Bar -->
                 <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 mb-4">
                     <div class="flex justify-between items-center text-[11px] font-bold mb-1.5">
                         <span id="shippingBarText" class="text-emerald-700">🚚 شحن مجاني مفعل لطلبك!</span>
@@ -207,7 +240,7 @@
                     </div>
                 </div>
 
-                <!-- 🟢 Fast WhatsApp Order Button -->
+                <!-- Fast WhatsApp Order Button -->
                 <form action="{{ route('order.whatsappQuick') }}" method="POST" class="mb-4">
                     @csrf
                     <input type="hidden" name="variant_id" value="{{ $product->variants->first()->id ?? 1 }}">
@@ -231,7 +264,7 @@
                 <form action="{{ route('order.checkout') }}" method="POST" class="space-y-4 text-xs font-bold">
                     @csrf
 
-                    <!-- 🎁 Quantity Bundles Radio Boxes -->
+                    <!-- Quantity Bundles Radio Boxes -->
                     <div>
                         <label class="block text-slate-700 mb-2">اختر العرض المناسب لك (توفير أكبر):</label>
                         <div class="space-y-2">
@@ -360,7 +393,7 @@
         </div>
     </main>
 
-    <!-- 📱 Sticky Buy-Now Mobile Bar -->
+    <!-- Mobile Bar -->
     <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 p-3 flex items-center justify-between shadow-2xl">
         <div>
             <span class="text-[10px] text-slate-400 font-bold block">السعر الإجمالي:</span>
@@ -394,6 +427,13 @@
         let bundleDiscountRate = 1;
         let couponDiscount = 0;
         let couponType = 'fixed';
+
+        function changeImage(src) {
+            const mainImg = document.getElementById('mainProductDisplay');
+            if (mainImg && src) {
+                mainImg.src = src;
+            }
+        }
 
         function selectBundle(qty, rate) {
             selectedQty = qty;
@@ -449,7 +489,6 @@
 
             const total = Math.max(0, subtotal + shipping - (couponDiscount > 0 ? (couponType === 'percent' ? subtotal * (couponDiscount / 100) : couponDiscount) : 0));
 
-            // Dynamic Shipping Progress Bar calculation
             const freeShippingThreshold = {{ $product->base_price * 1.5 }};
             const shippingBarText = document.getElementById('shippingBarText');
             const shippingBarPercent = document.getElementById('shippingBarPercent');
@@ -550,7 +589,7 @@
             captureLead();
         });
 
-        // 🎙️ Voice Note Recording Function
+        // Voice Note Recording
         let mediaRecorder;
         let audioChunks = [];
         let isRecording = false;
