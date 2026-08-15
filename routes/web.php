@@ -33,6 +33,7 @@ Route::post('/coupon/check', [ShopController::class, 'checkCoupon'])->name('coup
 Route::post('/lead/save', [ShopController::class, 'saveLead'])->name('lead.save');
 Route::post('/product/{productId}/review', [ShopController::class, 'storeReview'])->name('product.review');
 Route::get('/order/success/{tracking}', [ShopController::class, 'orderSuccess'])->name('order.success');
+Route::get('/stripe/success/{tracking}', [ShopController::class, 'stripeSuccess'])->name('stripe.success');
 Route::post('/order/{tracking}/upsell', [ShopController::class, 'addUpsell'])->name('order.upsell');
 Route::get('/track', [ShopController::class, 'trackOrderPage'])->name('shop.track');
 Route::post('/track', [ShopController::class, 'findOrder'])->name('shop.findOrder');

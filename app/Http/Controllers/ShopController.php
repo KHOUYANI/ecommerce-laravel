@@ -12,10 +12,11 @@ use App\Models\Lead;
 use App\Models\Review;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Stripe\Stripe;
+use Stripe\Checkout\Session as StripeSession;
 
 class ShopController extends Controller
 {
-    // Page d'accueil / Boutique
     public function index()
     {
         $products = Product::with(['variants', 'category', 'reviews'])
@@ -26,7 +27,6 @@ class ShopController extends Controller
         return view('shop.index', compact('products'));
     }
 
-    // Page de Détail Produit (Landing Page COD)
     public function show($slug)
     {
         $product = Product::with(['category', 'variants', 'reviews' => function($q) {
@@ -41,7 +41,6 @@ class ShopController extends Controller
         return view('shop.product', compact('product'));
     }
 
-    // API للتحقق من الكوبون بـ Ajax
     public function checkCoupon(Request $request)
     {
         $coupon = Coupon::where('code', strtoupper(trim($request->code)))
@@ -60,7 +59,6 @@ class ShopController extends Controller
         ]);
     }
 
-    // التقاط السلات المتروكة بالخلفية
     public function saveLead(Request $request)
     {
         $phone = preg_replace('/[^0-9]/', '', $request->phone);
@@ -78,7 +76,6 @@ class ShopController extends Controller
         return response()->json(['status' => 'ignored']);
     }
 
-    // تأكيد ومعالجة الطلب
     public function storeOrder(Request $request)
     {
         $validated = $request->validate([
@@ -91,9 +88,9 @@ class ShopController extends Controller
             'city'            => 'required|string|max:100',
             'address'         => 'required|string',
             'coupon_code'     => 'nullable|string',
+            'payment_method'  => 'required|in:cod,card',
         ]);
 
-        // 🛑 1. فحص الهاتف في القائمة السوداء
         $cleanPhone = preg_replace('/[^0-9]/', '', $validated['customer_phone']);
         $isBlacklisted = Blacklist::where('phone', $cleanPhone)->exists();
         
@@ -101,7 +98,6 @@ class ShopController extends Controller
             return redirect()->back()->with('error', 'عذراً، تعذر إتمام الطلب. المرجو إدخال رقم هاتف صحيح وشغال لتأكيد التوصيل.')->withInput();
         }
 
-        // 2. تحديد المنتج والفاريانت والكمية
         $qty = (int) ($request->bundle_option ?? $request->quantity ?? 1);
         $product = null;
         $variant = null;
@@ -125,7 +121,6 @@ class ShopController extends Controller
             return redirect()->back()->with('error', 'المرجو اختيار المنتج لتأكيد الطلب.')->withInput();
         }
 
-        // تأمين وجود Variant لتفادي خطأ NULL في جدول order_items
         if (!$variant) {
             $variant = $product->variants()->first();
             if (!$variant) {
@@ -139,7 +134,6 @@ class ShopController extends Controller
             }
         }
 
-        // 3. حساب السعر الأساسي والخصومات
         $unitPrice = (float) $product->base_price;
         if ($variant && isset($variant->additional_price)) {
             $unitPrice += (float) $variant->additional_price;
@@ -147,14 +141,12 @@ class ShopController extends Controller
 
         $subtotal = $unitPrice * $qty;
 
-        // خصم الباقات التلقائي
         if ($qty == 2) {
-            $subtotal = $subtotal * 0.85; // خصم 15%
+            $subtotal = $subtotal * 0.85;
         } elseif ($qty >= 3) {
-            $subtotal = $subtotal * 0.75; // خصم 25%
+            $subtotal = $subtotal * 0.75;
         }
 
-        // حساب مصاريف الشحن
         $shipping = 0;
         if ($qty < 2) {
             $cityClean = mb_strtolower(trim($validated['city']));
@@ -171,7 +163,6 @@ class ShopController extends Controller
             }
         }
 
-        // تطبيق كود الخصم
         $discount = 0;
         if (!empty($validated['coupon_code'])) {
             $coupon = Coupon::where('code', strtoupper(trim($validated['coupon_code'])))->where('is_active', true)->first();
@@ -183,7 +174,6 @@ class ShopController extends Controller
         $totalAmount = max(0, $subtotal + $shipping - $discount);
         $trackingNumber = 'COD-' . strtoupper(Str::random(8));
 
-        // 4. إنشاء الطلب
         $order = Order::create([
             'tracking_number' => $trackingNumber,
             'customer_name'   => $validated['customer_name'],
@@ -192,10 +182,11 @@ class ShopController extends Controller
             'address'         => $validated['address'],
             'total_amount'    => $totalAmount,
             'status'          => 'nouveau',
+            'payment_method'  => $validated['payment_method'],
+            'payment_status'  => 'unpaid',
             'admin_notes'     => $discount > 0 ? "خصم كوبون: {$discount} DH" : null,
         ]);
 
-        // 5. حفظ عناصر الطلب
         OrderItem::create([
             'order_id'           => $order->id,
             'product_variant_id' => $variant->id,
@@ -207,16 +198,50 @@ class ShopController extends Controller
             $variant->decrement('stock_quantity', $qty);
         }
 
-        // تحديث حالة السلة المتروكة
         Lead::where('customer_phone', $cleanPhone)->update(['is_recovered' => true]);
 
-        // 🔔 إشعار فوري تيليغرام
+        if ($validated['payment_method'] === 'card') {
+            try {
+                Stripe::setApiKey(env('STRIPE_SECRET'));
+
+                $session = StripeSession::create([
+                    'payment_method_types' => ['card'],
+                    'line_items' => [[
+                        'price_data' => [
+                            'currency' => 'mad',
+                            'product_data' => [
+                                'name' => $product->name . ' (x' . $qty . ')',
+                            ],
+                            'unit_amount' => (int)($totalAmount * 100),
+                        ],
+                        'quantity' => 1,
+                    ]],
+                    'mode' => 'payment',
+                    'success_url' => route('stripe.success', ['tracking' => $order->tracking_number]) . '?session_id={CHECKOUT_SESSION_ID}',
+                    'cancel_url' => route('shop.product', $product->slug ?? $product->id),
+                ]);
+
+                return redirect($session->url);
+            } catch (\Exception $e) {
+                return redirect()->route('order.success', $order->tracking_number);
+            }
+        }
+
         $this->sendTelegramNotification($order, $product, $qty);
+        return redirect()->route('order.success', $order->tracking_number);
+    }
+
+    public function stripeSuccess(Request $request, $tracking)
+    {
+        $order = Order::where('tracking_number', $tracking)->firstOrFail();
+        $order->update([
+            'payment_status' => 'paid',
+            'status'         => 'confirme'
+        ]);
 
         return redirect()->route('order.success', $order->tracking_number);
     }
 
-    // Page de Confirmation / Thank You Page
     public function orderSuccess($tracking)
     {
         $order = Order::with(['items.variant.product'])->where('tracking_number', $tracking)->firstOrFail();
@@ -230,7 +255,6 @@ class ShopController extends Controller
         return view('shop.success', compact('order', 'upsellProduct'));
     }
 
-    // إضافة منتج الـ Upsell للطلبية مباشرة
     public function addUpsell(Request $request, $tracking)
     {
         $request->validate([
@@ -239,7 +263,6 @@ class ShopController extends Controller
         ]);
 
         $order = Order::where('tracking_number', $tracking)->firstOrFail();
-        
         $product = null;
         $variant = null;
 
@@ -277,7 +300,6 @@ class ShopController extends Controller
         return redirect()->route('order.success', $order->tracking_number)->with('upsell_added', 'تمت إضافة العرض الحصري إلى طلبيتك بنجاح وتحديث المبلغ الإجمالي!');
     }
 
-    // صفحة التتبع العامة
     public function trackOrderPage()
     {
         return view('shop.track');
@@ -301,7 +323,6 @@ class ShopController extends Controller
         return view('shop.track', compact('order'));
     }
 
-    // طلب مباشر وسريع بالواتساب
     public function quickWhatsappOrder(Request $request)
     {
         $product = null;
@@ -344,6 +365,8 @@ class ShopController extends Controller
             'address'         => 'طلب سريع عبر الواتساب',
             'total_amount'    => (float) $prodPrice,
             'status'          => 'nouveau',
+            'payment_method'  => 'cod',
+            'payment_status'  => 'unpaid',
             'admin_notes'     => 'تم إنشاؤه عبر زر الواتساب السريع',
         ]);
 
@@ -368,7 +391,6 @@ class ShopController extends Controller
         return redirect("https://wa.me/{$storeWhatsapp}?text=" . urlencode($text));
     }
 
-    // إضافة تقييم للمنتج
     public function storeReview(Request $request, $productId)
     {
         $request->validate([
@@ -390,7 +412,6 @@ class ShopController extends Controller
         return redirect()->back()->with('review_success', 'شكراً لك! تم نشر تقييمك بنجاح.');
     }
 
-    // 🔔 إرسال إشعار تيليغرام
     private function sendTelegramNotification($order, $product, $quantity)
     {
         $botToken = env('TELEGRAM_BOT_TOKEN');
@@ -399,6 +420,7 @@ class ShopController extends Controller
         if (!$botToken || !$chatId) return;
 
         $productName = is_object($product) ? $product->name : 'منتج';
+        $payMethod = $order->payment_method === 'card' ? '💳 بطاقة بنكية' : '💵 الدفع عند الاستلام (COD)';
 
         $msg = "🚀 *طلبية جديدة في MED EXPRESS!* \n\n"
              . "📦 *كود التتبع:* `{$order->tracking_number}`\n"
@@ -407,6 +429,7 @@ class ShopController extends Controller
              . "📍 *المدينة:* {$order->city}\n"
              . "🏠 *العنوان:* {$order->address}\n"
              . "🛍️ *المنتج:* {$productName} (x{$quantity})\n"
+             . "💳 *طريقة الدفع:* {$payMethod}\n"
              . "💵 *المبلغ الإجمالي:* *{$order->total_amount} DH*\n\n"
              . "⚡ المرجو تأكيد الطلبية عبر لوحة التحكم.";
 

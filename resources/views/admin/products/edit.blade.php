@@ -92,28 +92,37 @@
                     </div>
                 </div>
 
-                <!-- استعراض الصور الحالية المسجلة -->
+                <!-- 🖼️ إدارة الصور الحالية مع إمكانية حذف أي صورة -->
                 @if(count($currentImages) > 0)
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
-                        <label class="block text-xs font-bold text-slate-700">الصور الحالية للمنتج ({{ count($currentImages) }}):</label>
-                        <div class="flex flex-wrap gap-3">
+                    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-bold text-slate-800">الصور الحالية للمنتج ({{ count($currentImages) }}):</label>
+                            <span class="text-[10px] text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full font-bold">انقر على ✕ فوق أي صورة لحذفها</span>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-3" id="existingImagesContainer">
                             @foreach($currentImages as $idx => $cImg)
                                 @php
                                     $showSrc = (!str_starts_with($cImg, 'http') && !str_starts_with($cImg, '/storage/')) ? '/storage/' . $cImg : $cImg;
                                 @endphp
-                                <div class="w-16 h-16 rounded-xl border border-slate-300 overflow-hidden bg-white p-1 relative shadow-sm">
+                                <div class="relative group w-20 h-20 rounded-xl border border-slate-300 overflow-hidden bg-white p-1 shadow-sm" id="img-box-{{ $idx }}">
                                     <img src="{{ $showSrc }}" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800';">
-                                    <span class="absolute bottom-0 right-0 bg-slate-900 text-white text-[8px] px-1 rounded-tl">#{{ $idx + 1 }}</span>
+                                    <input type="hidden" name="existing_images[]" value="{{ $cImg }}" id="input-img-{{ $idx }}">
+                                    
+                                    <!-- زر حذف صورة محددة -->
+                                    <button type="button" onclick="removeExistingImage('{{ $idx }}')" class="absolute top-1 left-1 bg-rose-600 hover:bg-rose-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-black shadow transition" title="حذف هذه الصورة">
+                                        ✕
+                                    </button>
+                                    <span class="absolute bottom-0 right-0 bg-slate-900/80 text-white text-[8px] px-1 rounded-tl">#{{ $idx + 1 }}</span>
                                 </div>
                             @endforeach
                         </div>
-                        <p class="text-[10px] text-slate-500">💡 هذه الصور ستبقى محفوظة كما هي ما لم تقم بإضافة صور جديدة بالأسفل.</p>
                     </div>
                 @endif
 
                 <!-- إضافة صور جديدة -->
                 <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
-                    <h3 class="font-bold text-xs text-slate-800">📸 إضافة أو تحديث الصور:</h3>
+                    <h3 class="font-bold text-xs text-slate-800">📸 إضافة صور جديدة:</h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="bg-white p-3.5 rounded-xl border border-slate-200">
@@ -123,7 +132,7 @@
 
                         <div class="bg-white p-3.5 rounded-xl border border-slate-200">
                             <label class="block text-xs font-bold text-slate-700 mb-1">أو رابط صورة خارجي (Image URL):</label>
-                            <input type="url" name="image_url" placeholder="https://images.unsplash.com/..." class="w-full border border-slate-300 rounded-lg p-2 text-xs outline-none">
+                            <input type="url" name="image_url" placeholder="https://images.unsplash.com/..." class="w-full border rounded-lg p-2 text-xs outline-none">
                         </div>
                     </div>
                 </div>
@@ -151,5 +160,13 @@
         </div>
     </main>
 
+    <script>
+        function removeExistingImage(index) {
+            const box = document.getElementById(`img-box-${index}`);
+            if (box) {
+                box.remove();
+            }
+        }
+    </script>
 </body>
 </html>

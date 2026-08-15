@@ -157,7 +157,7 @@
                 </div>
 
                 <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 space-y-2 text-xs font-bold text-slate-700">
-                    <div class="flex items-center gap-2 text-emerald-700">✔ الدفع نقدًا عند استلام المنتج ومراجعته</div>
+                    <div class="flex items-center gap-2 text-emerald-700">✔ إمكانية الدفع عند الاستلام أو بالبطاقة البنكية</div>
                     <div class="flex items-center gap-2 text-emerald-700">✔ شحن سريع لجميع مدن المغرب مجانًا</div>
                     <div class="flex items-center gap-2 text-emerald-700">✔ ضمان الجودة واستبدال فوري عند أي مشكل</div>
                 </div>
@@ -226,12 +226,12 @@
 
             </div>
 
-            <!-- Formulaire COD Express Pro + Voice Note Order + Bundles -->
+            <!-- Formulaire COD Express Pro + Voice Note Order + Payment Methods + Bundles -->
             <div id="checkoutFormSection" class="md:col-span-5 bg-white p-6 sm:p-8 rounded-3xl shadow-xl border-2 border-emerald-500 sticky top-20">
                 <div class="text-center mb-4">
-                    <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">استمارة الطلب السريع</span>
+                    <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">استمارة الطلب السريع والدفع</span>
                     <h2 class="text-xl font-black text-slate-900 mt-2">املأ معلوماتك لإتمام الطلب 👇</h2>
-                    <p class="text-[11px] text-slate-400 mt-1">الدفع عند الاستلام مع فحص المنتج قبل الأداء</p>
+                    <p class="text-[11px] text-slate-400 mt-1">اختر طريقة الدفع المناسبة لك</p>
                 </div>
 
                 <!-- 🎙️ Voice Note Order Box -->
@@ -299,6 +299,26 @@
 
                     <!-- 🔥 الحقل الأساسي لتمرير معرف المنتج -->
                     <input type="hidden" name="product_id" value="{{ $product->id }}">
+
+                    <!-- 💳 طريقة الدفع (Paiement Mode) -->
+                    <div>
+                        <label class="block text-slate-700 mb-2">طريقة الأداء والدفع المفضلة لديك:</label>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <label class="pay-method-card border-2 border-emerald-500 bg-emerald-50/50 p-3 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition text-center space-y-1">
+                                <input type="radio" name="payment_method" value="cod" checked class="hidden" onchange="selectPayMethod(this)">
+                                <span class="text-xl">💵</span>
+                                <span class="font-black text-slate-900 text-xs block">الدفع عند الاستلام</span>
+                                <span class="text-[10px] text-slate-500 font-normal">بعد فحص ومعاينة الطلب</span>
+                            </label>
+
+                            <label class="pay-method-card border border-slate-200 bg-white p-3 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition text-center space-y-1">
+                                <input type="radio" name="payment_method" value="card" class="hidden" onchange="selectPayMethod(this)">
+                                <span class="text-xl">💳</span>
+                                <span class="font-black text-slate-900 text-xs block">بطاقة بنكية (Stripe)</span>
+                                <span class="text-[10px] text-emerald-600 font-bold">دفع آمن ومشفر 100%</span>
+                            </label>
+                        </div>
+                    </div>
 
                     <!-- 🎁 Quantity Bundles Radio Boxes -->
                     <div>
@@ -417,12 +437,12 @@
                             <span id="discountDisplay" class="font-bold font-en">-0.00 DH</span>
                         </div>
                         <div class="border-t border-slate-700 pt-1.5 flex justify-between items-center">
-                            <span class="font-black text-xs">المجموع النهائي للدفع عند الاستلام:</span>
+                            <span class="font-black text-xs">المجموع النهائي للدفع:</span>
                             <span id="finalTotalDisplay" class="text-lg font-black text-emerald-400 font-en">0.00 DH</span>
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-emerald-600/30 hover:shadow-none transition duration-200 text-sm flex items-center justify-center gap-2">
+                    <button type="submit" id="submitOrderBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-emerald-600/30 hover:shadow-none transition duration-200 text-sm flex items-center justify-center gap-2">
                         <span>تأكيد الطلب الآن 🛍️</span>
                     </button>
                 </form>
@@ -465,6 +485,25 @@
         let bundleDiscountRate = 1;
         let couponDiscount = 0;
         let couponType = 'fixed';
+
+        function selectPayMethod(radio) {
+            document.querySelectorAll('.pay-method-card').forEach(c => {
+                c.classList.remove('border-emerald-500', 'bg-emerald-50/50');
+                c.classList.add('border-slate-200', 'bg-white');
+            });
+            const parent = radio.closest('.pay-method-card');
+            parent.classList.remove('border-slate-200', 'bg-white');
+            parent.classList.add('border-emerald-500', 'bg-emerald-50/50');
+
+            const submitBtn = document.getElementById('submitOrderBtn');
+            if (radio.value === 'card') {
+                submitBtn.innerText = "الانتقال للدفع الآمن بالبطاقة 💳";
+                submitBtn.className = "w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-600/30 transition text-sm flex items-center justify-center gap-2";
+            } else {
+                submitBtn.innerText = "تأكيد الطلب الآن 🛍️";
+                submitBtn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-emerald-600/30 transition text-sm flex items-center justify-center gap-2";
+            }
+        }
 
         function changeMainImage(src, btn) {
             const mainImg = document.getElementById('mainProductDisplay');
