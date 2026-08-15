@@ -82,7 +82,7 @@ class ShopController extends Controller
     public function storeOrder(Request $request)
     {
         $validated = $request->validate([
-            'product_id'      => 'nullable|exists:products,id',
+            'product_id'      => 'nullable',
             'variant_id'      => 'nullable',
             'quantity'        => 'nullable|integer|min:1',
             'bundle_option'   => 'nullable|integer|min:1',
@@ -103,8 +103,8 @@ class ShopController extends Controller
 
         // 2. تحديد المنتج والفاريانت والكمية
         $qty = (int) ($request->bundle_option ?? $request->quantity ?? 1);
-        $variant = null;
         $product = null;
+        $variant = null;
 
         if ($request->filled('variant_id')) {
             $variant = ProductVariant::with('product')->find($request->variant_id);
@@ -114,12 +114,29 @@ class ShopController extends Controller
         }
 
         if (!$product && $request->filled('product_id')) {
-            $product = Product::with('variants')->findOrFail($request->product_id);
-            $variant = $product->variants->first();
+            $product = Product::with('variants')->find($request->product_id);
+        }
+
+        if (!$product) {
+            $product = Product::with('variants')->first();
         }
 
         if (!$product) {
             return redirect()->back()->with('error', 'المرجو اختيار المنتج لتأكيد الطلب.')->withInput();
+        }
+
+        // تأمين وجود Variant لتفادي خطأ NULL في جدول order_items
+        if (!$variant) {
+            $variant = $product->variants()->first();
+            if (!$variant) {
+                $variant = ProductVariant::create([
+                    'product_id'       => $product->id,
+                    'size'             => 'Standard',
+                    'color'            => 'Default',
+                    'additional_price' => 0,
+                    'stock_quantity'   => 100,
+                ]);
+            }
         }
 
         // 3. حساب السعر الأساسي والخصومات
@@ -181,13 +198,12 @@ class ShopController extends Controller
         // 5. حفظ عناصر الطلب
         OrderItem::create([
             'order_id'           => $order->id,
-            'product_id'         => $product->id,
-            'product_variant_id' => $variant ? $variant->id : null,
+            'product_variant_id' => $variant->id,
             'quantity'           => $qty,
             'unit_price'         => $unitPrice,
         ]);
 
-        if ($variant && $variant->stock_quantity >= $qty) {
+        if ($variant->stock_quantity >= $qty) {
             $variant->decrement('stock_quantity', $qty);
         }
 
@@ -203,9 +219,9 @@ class ShopController extends Controller
     // Page de Confirmation / Thank You Page
     public function orderSuccess($tracking)
     {
-        $order = Order::with(['items.product', 'items.variant.product'])->where('tracking_number', $tracking)->firstOrFail();
+        $order = Order::with(['items.variant.product'])->where('tracking_number', $tracking)->firstOrFail();
         
-        $purchasedProductIds = $order->items->pluck('product_id')->filter()->toArray();
+        $purchasedProductIds = $order->items->pluck('variant.product_id')->filter()->toArray();
         $upsellProduct = Product::with('variants')
             ->whereNotIn('id', $purchasedProductIds)
             ->where('is_active', true)
@@ -218,19 +234,40 @@ class ShopController extends Controller
     public function addUpsell(Request $request, $tracking)
     {
         $request->validate([
-            'product_id' => 'required|exists:products,id',
+            'product_id' => 'nullable|exists:products,id',
             'variant_id' => 'nullable',
         ]);
 
         $order = Order::where('tracking_number', $tracking)->firstOrFail();
-        $product = Product::findOrFail($request->product_id);
+        
+        $product = null;
+        $variant = null;
 
-        $upsellPrice = round($product->base_price * 0.8, 2); // خصم 20%
+        if ($request->filled('variant_id')) {
+            $variant = ProductVariant::with('product')->find($request->variant_id);
+            if ($variant) $product = $variant->product;
+        }
+
+        if (!$product && $request->filled('product_id')) {
+            $product = Product::with('variants')->findOrFail($request->product_id);
+            $variant = $product->variants()->first();
+        }
+
+        if (!$variant && $product) {
+            $variant = ProductVariant::create([
+                'product_id'       => $product->id,
+                'size'             => 'Standard',
+                'color'            => 'Default',
+                'additional_price' => 0,
+                'stock_quantity'   => 100,
+            ]);
+        }
+
+        $upsellPrice = round($product->base_price * 0.8, 2);
 
         OrderItem::create([
             'order_id'           => $order->id,
-            'product_id'         => $product->id,
-            'product_variant_id' => $request->variant_id ?? null,
+            'product_variant_id' => $variant->id,
             'quantity'           => 1,
             'unit_price'         => $upsellPrice,
         ]);
@@ -251,7 +288,7 @@ class ShopController extends Controller
         $term = trim($request->input('search_term') ?? $request->input('search'));
         $cleanPhone = preg_replace('/[^0-9]/', '', $term);
 
-        $order = Order::with(['items.product', 'items.variant.product'])
+        $order = Order::with(['items.variant.product'])
             ->where('tracking_number', $term)
             ->orWhere('customer_phone', 'like', "%{$cleanPhone}%")
             ->latest()
@@ -268,13 +305,31 @@ class ShopController extends Controller
     public function quickWhatsappOrder(Request $request)
     {
         $product = null;
+        $variant = null;
+
         if ($request->filled('variant_id')) {
             $variant = ProductVariant::with('product')->find($request->variant_id);
             if ($variant) $product = $variant->product;
         }
 
         if (!$product && $request->filled('product_id')) {
-            $product = Product::find($request->product_id);
+            $product = Product::with('variants')->find($request->product_id);
+            if ($product) $variant = $product->variants()->first();
+        }
+
+        if (!$product) {
+            $product = Product::with('variants')->first();
+            if ($product) $variant = $product->variants()->first();
+        }
+
+        if ($product && !$variant) {
+            $variant = ProductVariant::create([
+                'product_id'       => $product->id,
+                'size'             => 'Standard',
+                'color'            => 'Default',
+                'additional_price' => 0,
+                'stock_quantity'   => 100,
+            ]);
         }
 
         $prodName = $product ? $product->name : 'منتج من المتجر';
@@ -292,12 +347,12 @@ class ShopController extends Controller
             'admin_notes'     => 'تم إنشاؤه عبر زر الواتساب السريع',
         ]);
 
-        if ($product) {
+        if ($variant) {
             OrderItem::create([
-                'order_id'   => $order->id,
-                'product_id' => $product->id,
-                'quantity'   => 1,
-                'unit_price' => (float) $prodPrice,
+                'order_id'           => $order->id,
+                'product_variant_id' => $variant->id,
+                'quantity'           => 1,
+                'unit_price'         => (float) $prodPrice,
             ]);
         }
 
