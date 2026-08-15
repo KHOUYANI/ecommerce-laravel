@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>إضافة منتج جديد | MED EXPRESS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -50,21 +51,22 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-2">اسم المنتج * :</label>
-                        <input type="text" name="name" value="{{ old('name') }}" placeholder="مثال: ساعة ذكية فاخرة مقاومة للماء" required 
+                        <input type="text" name="name" value="{{ old('name') }}" placeholder="مثال: مضخة غسيل السيارات والحدائق اللاسلكية" required 
                                class="w-full border @error('name') border-rose-500 bg-rose-50 @else border-slate-300 @enderror rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
                         @error('name')
                             <span class="text-rose-500 text-xs mt-1 block">{{ $message }}</span>
                         @enderror
                     </div>
-                <div class="flex justify-between items-center mb-2">
-    <label class="block text-xs font-bold text-slate-700">القسم (Catégorie) * :</label>
-    <button type="button" onclick="addNewCategoryPrompt()" class="text-xs text-emerald-600 hover:text-emerald-700 font-bold">
-        ➕ إضافة قسم جديد
-    </button>
-</div>
+
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-2">القسم (Catégorie) * :</label>
-                        <select name="category_id" required class="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-xs font-bold text-slate-700">القسم (Catégorie) * :</label>
+                            <button type="button" onclick="addNewCategoryPrompt()" class="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1">
+                                <span>➕</span>
+                                <span>إضافة قسم جديد</span>
+                            </button>
+                        </div>
+                        <select name="category_id" id="categorySelect" required class="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
                             <option value="" disabled selected>-- اختر القسم المناسب --</option>
                             @foreach($categories as $category)
                                 <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
@@ -112,13 +114,13 @@
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-2">المقاسات المتاحة (اختياري):</label>
-                        <input type="text" name="size" value="{{ old('size') }}" placeholder="S, M, L, XL أو Standard" 
+                        <input type="text" name="size" value="{{ old('size') }}" placeholder="Standard أو S, M, L" 
                                class="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-2">الألوان المتاحة (اختياري):</label>
-                        <input type="text" name="color" value="{{ old('color') }}" placeholder="أسود، بني، فضي" 
+                        <input type="text" name="color" value="{{ old('color') }}" placeholder="أسود، فضي، كحلي" 
                                class="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
                     </div>
                 </div>
@@ -138,7 +140,6 @@
                                class="w-full border border-slate-300 rounded-xl p-3 text-sm bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
                     </div>
 
-                    {{-- مكان معاينة الصورة --}}
                     <div id="imagePreviewContainer" class="hidden md:col-span-2 flex items-center gap-3 pt-2">
                         <span class="text-xs font-bold text-slate-600">معاينة الصورة:</span>
                         <img id="imagePreview" src="#" alt="Preview" class="w-16 h-16 object-cover rounded-lg border border-slate-200 shadow-sm">
@@ -173,7 +174,7 @@
         </div>
     </main>
 
-    {{-- Script لمعاينة الصورة فالحين --}}
+    {{-- Script إضافة قسم ومعاينة الصور --}}
     <script>
         const imageInput = document.getElementById('imageInput');
         const imagePreviewContainer = document.getElementById('imagePreviewContainer');
@@ -190,29 +191,41 @@
                 reader.readAsDataURL(file);
             }
         });
-        function addNewCategoryPrompt() {
-    const categoryName = prompt("اكتب اسم القسم الجديد (مثال: الإلكترونيات):");
-    if (!categoryName) return;
 
-    fetch("{{ route('admin.categories.quickStore') }}", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": "{{ csrf_token() }}"
-        },
-        body: JSON.stringify({ name: categoryName })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(data.success) {
-            const select = document.querySelector('select[name="category_id"]');
-            const newOption = new Option(data.category.name, data.category.id, true, true);
-            select.add(newOption);
-            alert("✅ تم إنشاء القسم واختياره بنجاح!");
+        function addNewCategoryPrompt() {
+            const categoryName = prompt("اكتب اسم القسم الجديد (مثال: أدوات ومعدات منزلية):");
+            if (!categoryName || !categoryName.trim()) return;
+
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+            fetch("{{ route('admin.categories.quickStore') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "X-CSRF-TOKEN": token
+                },
+                body: JSON.stringify({ name: categoryName.trim() })
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.message || 'حدث خطأ أثناء إضافة القسم');
+                }
+                return data;
+            })
+            .then(data => {
+                if (data.success && data.category) {
+                    const select = document.getElementById('categorySelect');
+                    const newOption = new Option(data.category.name, data.category.id, true, true);
+                    select.add(newOption);
+                    alert("✅ تم إنشاء القسم (" + data.category.name + ") واختياره بنجاح!");
+                }
+            })
+            .catch(err => {
+                alert("⚠️ " + err.message);
+            });
         }
-    })
-    .catch(err => alert("حدث خطأ أثناء إضافة القسم"));
-}
     </script>
 </body>
 </html>
