@@ -42,11 +42,9 @@ Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () {
     Route::post('/orders/bulk-print', [AdminOrderController::class, 'bulkPrint'])->name('orders.bulkPrint');
     Route::get('/leads', [AdminOrderController::class, 'leadsIndex'])->name('leads.index');
     Route::post('/blacklist/add', [AdminOrderController::class, 'addToBlacklist'])->name('blacklist.add');
-    
-    // Categories Quick Store Route
-    Route::post('/categories/quick-store', [ProductController::class, 'storeCategory'])->name('categories.quickStore');
 
     // Products Management (Resource Routes)
+    Route::post('/categories/quick-store', [ProductController::class, 'storeCategory'])->name('categories.quickStore');
     Route::resource('products', ProductController::class);
     Route::post('/products/{id}/toggle', [AdminOrderController::class, 'toggleProduct'])->name('products.toggle');
 

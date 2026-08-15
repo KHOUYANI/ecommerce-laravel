@@ -28,7 +28,6 @@ class ProductController extends Controller
             'name'        => 'required|string|max:255',
             'category_id' => 'required',
             'base_price'  => 'required|numeric|min:0',
-            'stock'       => 'nullable|integer',
             'description' => 'required|string',
             'image'       => 'nullable|image|max:2048',
             'image_url'   => 'nullable|url',
@@ -51,23 +50,24 @@ class ProductController extends Controller
             'is_active'   => $request->has('is_active') ? 1 : 0,
         ]);
 
-        return redirect()->route('admin.orders.index')->with('success', 'تمت إضافة المنتج بنجاح!');
+        return redirect()->route('admin.orders.index')->with('success', 'تمت إضافة ونشر المنتج بنجاح!');
     }
 
     public function storeCategory(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name'
+            'name' => 'required|string|max:255'
         ]);
 
-        $category = Category::create([
-            'name' => $request->name,
-            'slug' => Str::slug($request->name) . '-' . rand(100, 999),
-        ]);
+        $category = Category::firstOrCreate(
+            ['name' => $request->name],
+            ['slug' => Str::slug($request->name) . '-' . rand(100, 999), 'is_active' => 1]
+        );
 
-        return response()->json([
-            'success' => true,
-            'category' => $category
-        ]);
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'category' => $category]);
+        }
+
+        return redirect()->back()->with('success', 'تمت إضافة القسم بنجاح!');
     }
 }

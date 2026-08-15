@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>إضافة منتج جديد | MED EXPRESS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,7 +12,7 @@
 </head>
 <body class="bg-slate-100 text-slate-800">
 
-    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
+    <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md">
         <div class="max-w-4xl mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <span class="bg-emerald-500 text-slate-900 font-black px-2 py-0.5 rounded text-sm">M</span>
@@ -28,7 +27,14 @@
 
     <main class="max-w-4xl mx-auto px-6 py-8">
         
-        {{-- عرض رسائل الخطأ العامة --}}
+        {{-- عرض رسائل النجاح والخطأ --}}
+        @if(session('success'))
+            <div class="bg-emerald-50 border-r-4 border-emerald-500 p-4 rounded-xl mb-6 shadow-sm text-emerald-800 font-bold text-xs flex items-center gap-2">
+                <span>✅</span>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
+
         @if ($errors->any())
             <div class="bg-rose-50 border-r-4 border-rose-500 p-4 rounded-xl mb-6 shadow-sm">
                 <div class="flex items-center gap-2 text-rose-700 font-bold text-sm mb-1">
@@ -51,17 +57,14 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-2">اسم المنتج * :</label>
-                        <input type="text" name="name" value="{{ old('name') }}" placeholder="مثال: مضخة غسيل السيارات والحدائق اللاسلكية" required 
+                        <input type="text" name="name" value="{{ old('name') }}" placeholder="مثال: ساعة ذكية فاخرة Ultra Pro" required 
                                class="w-full border @error('name') border-rose-500 bg-rose-50 @else border-slate-300 @enderror rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
-                        @error('name')
-                            <span class="text-rose-500 text-xs mt-1 block">{{ $message }}</span>
-                        @enderror
                     </div>
 
                     <div>
                         <div class="flex justify-between items-center mb-2">
                             <label class="block text-xs font-bold text-slate-700">القسم (Catégorie) * :</label>
-                            <button type="button" onclick="addNewCategoryPrompt()" class="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1">
+                            <button type="button" onclick="document.getElementById('addCategoryModal').classList.remove('hidden')" class="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-200 transition">
                                 <span>➕</span>
                                 <span>إضافة قسم جديد</span>
                             </button>
@@ -74,9 +77,6 @@
                                 </option>
                             @endforeach
                         </select>
-                        @error('category_id')
-                            <span class="text-rose-500 text-xs mt-1 block">{{ $message }}</span>
-                        @enderror
                     </div>
                 </div>
 
@@ -84,22 +84,19 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-2">ثمن البيع (MAD) * :</label>
-                        <input type="number" step="0.01" name="base_price" value="{{ old('base_price') }}" placeholder="199.00" required 
-                               class="w-full border @error('base_price') border-rose-500 bg-rose-50 @else border-slate-300 @enderror rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-                        @error('base_price')
-                            <span class="text-rose-500 text-xs mt-1 block">{{ $message }}</span>
-                        @enderror
+                        <input type="number" step="0.01" name="base_price" value="{{ old('base_price') }}" placeholder="249.00" required 
+                               class="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-2">الثمن قبل التخفيض (اختياري):</label>
-                        <input type="number" step="0.01" name="compare_price" value="{{ old('compare_price') }}" placeholder="299.00" 
+                        <input type="number" step="0.01" name="compare_price" value="{{ old('compare_price') }}" placeholder="399.00" 
                                class="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-2">رمز المنتج (SKU اختياري):</label>
-                        <input type="text" name="sku" value="{{ old('sku') }}" placeholder="مثال: PRD-001" 
+                        <input type="text" name="sku" value="{{ old('sku') }}" placeholder="مثال: WATCH-01" 
                                class="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
                     </div>
                 </div>
@@ -120,7 +117,7 @@
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-2">الألوان المتاحة (اختياري):</label>
-                        <input type="text" name="color" value="{{ old('color') }}" placeholder="أسود، فضي، كحلي" 
+                        <input type="text" name="color" value="{{ old('color') }}" placeholder="أسود، كحلي، برتقالي" 
                                class="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
                     </div>
                 </div>
@@ -136,7 +133,7 @@
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-2">2. أو وضع رابط صورة مباشر (Image URL):</label>
-                        <input type="url" name="image_url" value="{{ old('image_url') }}" placeholder="https://example.com/image.jpg" 
+                        <input type="url" name="image_url" value="{{ old('image_url') }}" placeholder="https://images.unsplash.com/..." 
                                class="w-full border border-slate-300 rounded-xl p-3 text-sm bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
                     </div>
 
@@ -150,10 +147,7 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-2">وصف ومميزات المنتج * :</label>
                     <textarea name="description" rows="4" placeholder="اكتب تفاصيل ومواصفات المنتج وعروض التوصيل هنا..." required 
-                              class="w-full border @error('description') border-rose-500 bg-rose-50 @else border-slate-300 @enderror rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none leading-relaxed">{{ old('description') }}</textarea>
-                    @error('description')
-                        <span class="text-rose-500 text-xs mt-1 block">{{ $message }}</span>
-                    @enderror
+                              class="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none leading-relaxed">{{ old('description') }}</textarea>
                 </div>
 
                 {{-- تفعيل المنتج فالمتجر --}}
@@ -174,7 +168,29 @@
         </div>
     </main>
 
-    {{-- Script إضافة قسم ومعاينة الصور --}}
+    {{-- ➕ Modal إضافة قسم جديد بدون مشاكل Fetch --}}
+    <div id="addCategoryModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl border border-slate-200">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-black text-slate-900 text-sm">➕ إضافة قسم (Catégorie) جديد</h3>
+                <button type="button" onclick="document.getElementById('addCategoryModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 font-bold text-lg">✕</button>
+            </div>
+            
+            <form action="{{ route('admin.categories.quickStore') }}" method="POST" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">اسم القسم الجديد:</label>
+                    <input type="text" name="name" placeholder="مثال: إلكترونيات وهواتف" required class="w-full border border-slate-300 rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs transition">
+                    حفظ القسم فوراً ✅
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {{-- Script معاينة الصورة --}}
     <script>
         const imageInput = document.getElementById('imageInput');
         const imagePreviewContainer = document.getElementById('imagePreviewContainer');
@@ -191,41 +207,6 @@
                 reader.readAsDataURL(file);
             }
         });
-
-        function addNewCategoryPrompt() {
-            const categoryName = prompt("اكتب اسم القسم الجديد (مثال: أدوات ومعدات منزلية):");
-            if (!categoryName || !categoryName.trim()) return;
-
-            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-            fetch("{{ route('admin.categories.quickStore') }}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "X-CSRF-TOKEN": token
-                },
-                body: JSON.stringify({ name: categoryName.trim() })
-            })
-            .then(async res => {
-                const data = await res.json();
-                if (!res.ok) {
-                    throw new Error(data.message || 'حدث خطأ أثناء إضافة القسم');
-                }
-                return data;
-            })
-            .then(data => {
-                if (data.success && data.category) {
-                    const select = document.getElementById('categorySelect');
-                    const newOption = new Option(data.category.name, data.category.id, true, true);
-                    select.add(newOption);
-                    alert("✅ تم إنشاء القسم (" + data.category.name + ") واختياره بنجاح!");
-                }
-            })
-            .catch(err => {
-                alert("⚠️ " + err.message);
-            });
-        }
     </script>
 </body>
 </html>
