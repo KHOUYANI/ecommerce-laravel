@@ -6,10 +6,6 @@ use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\ProductController;
 
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-Route::resource('products', ProductController::class);
-});
-
 // ==========================================
 // 🛍️ Public Storefront, Checkout & APIs
 // ==========================================
@@ -35,29 +31,25 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admi
 // ==========================================
 // 📦 Protected Admin Dashboard
 // ==========================================
-Route::prefix('admin')->middleware('auth')->group(function () {
+Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () {
     
     // Shared between Admin & Confirmation Team
-    Route::get('/orders', [AdminOrderController::class, 'index'])->name('admin.orders.index');
-    Route::post('/orders/quick-create', [AdminOrderController::class, 'quickCreateOrder'])->name('admin.orders.quickCreate');
-    Route::post('/orders/{id}/status', [AdminOrderController::class, 'updateStatus'])->name('admin.orders.updateStatus');
-    Route::post('/orders/{id}/ajax-status', [AdminOrderController::class, 'ajaxUpdateStatus'])->name('admin.orders.ajaxStatus');
-    Route::get('/orders/{id}/print', [AdminOrderController::class, 'printLabel'])->name('admin.orders.print');
-    Route::post('/orders/bulk-print', [AdminOrderController::class, 'bulkPrint'])->name('admin.orders.bulkPrint');
-    Route::get('/leads', [AdminOrderController::class, 'leadsIndex'])->name('admin.leads.index');
-    Route::post('/blacklist/add', [AdminOrderController::class, 'addToBlacklist'])->name('admin.blacklist.add');
+    Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+    Route::post('/orders/quick-create', [AdminOrderController::class, 'quickCreateOrder'])->name('orders.quickCreate');
+    Route::post('/orders/{id}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.updateStatus');
+    Route::post('/orders/{id}/ajax-status', [AdminOrderController::class, 'ajaxUpdateStatus'])->name('orders.ajaxStatus');
+    Route::get('/orders/{id}/print', [AdminOrderController::class, 'printLabel'])->name('orders.print');
+    Route::post('/orders/bulk-print', [AdminOrderController::class, 'bulkPrint'])->name('orders.bulkPrint');
+    Route::get('/leads', [AdminOrderController::class, 'leadsIndex'])->name('leads.index');
+    Route::post('/blacklist/add', [AdminOrderController::class, 'addToBlacklist'])->name('blacklist.add');
 
-    // Admin-Only Privileges (Settings, Products, Exports)
-    Route::middleware('role:admin')->group(function () {
-        Route::get('/orders/export', [AdminOrderController::class, 'exportCsv'])->name('admin.orders.export');
-        Route::get('/products', [AdminOrderController::class, 'productsList'])->name('admin.products.list');
-        Route::get('/products/create', [AdminOrderController::class, 'createProduct'])->name('admin.products.create');
-        Route::post('/products/store', [AdminOrderController::class, 'storeProduct'])->name('admin.products.store');
-        Route::post('/products/{id}/toggle', [AdminOrderController::class, 'toggleProduct'])->name('admin.products.toggle');
-        
-        // Marketing, Pixels & Coupons
-        Route::get('/settings', [AdminOrderController::class, 'settingsPage'])->name('admin.settings');
-        Route::post('/settings', [AdminOrderController::class, 'saveSettings'])->name('admin.settings.save');
-        Route::post('/coupons', [AdminOrderController::class, 'storeCoupon'])->name('admin.coupons.store');
-    });
+    // Products Management (Resource Routes)
+    Route::resource('products', ProductController::class);
+    Route::post('/products/{id}/toggle', [AdminOrderController::class, 'toggleProduct'])->name('products.toggle');
+
+    // Admin-Only Privileges (Settings, Exports, Coupons)
+    Route::get('/orders/export', [AdminOrderController::class, 'exportCsv'])->name('orders.export');
+    Route::get('/settings', [AdminOrderController::class, 'settingsPage'])->name('settings');
+    Route::post('/settings', [AdminOrderController::class, 'saveSettings'])->name('settings.save');
+    Route::post('/coupons', [AdminOrderController::class, 'storeCoupon'])->name('coupons.store');
 });
