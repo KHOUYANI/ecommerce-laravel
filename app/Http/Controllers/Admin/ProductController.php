@@ -25,55 +25,68 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'        => 'required|string|max:255',
-            'category_id' => 'required',
-            'base_price'  => 'required|numeric|min:0',
-            'description' => 'required|string',
-            'image'       => 'nullable|image|max:3072',
-            'images.*'    => 'nullable|image|max:3072',
-            'image_url'   => 'nullable|url',
+            'name'         => 'required|string|max:255',
+            'category_id'  => 'required',
+            'base_price'   => 'required|numeric|min:0',
+            'description'  => 'required|string',
+            'image'        => 'nullable|image|max:4096',
+            'images.*'     => 'nullable|image|max:4096',
+            'image_url'    => 'nullable|url',
+            'gallery_urls' => 'nullable|string',
         ]);
 
-        // 1. معالجة الصورة الرئيسية
-        $imageUrl = $request->image_url;
+        $gallery = [];
+
+        // 1. معالجة رابط الصورة المباشر إن وجد
+        if ($request->filled('image_url')) {
+            $gallery[] = $request->image_url;
+        }
+
+        // 2. معالجة صورة واحدة مرفوعة
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
             $file->storeAs('products', $filename, 'public');
-            $imageUrl = '/storage/products/' . $filename;
+            $gallery[] = '/storage/products/' . $filename;
         }
 
-        // 2. معالجة صور المعرض الإضافية
-        $gallery = [];
+        // 3. معالجة عدة صور مرفوعة دفعة واحدة من البيسي
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
-                $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                $file->storeAs('products', $filename, 'public');
-                $gallery[] = '/storage/products/' . $filename;
+                if ($file->isValid()) {
+                    $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $file->storeAs('products', $filename, 'public');
+                    $gallery[] = '/storage/products/' . $filename;
+                }
             }
         }
-        if ($request->gallery_urls) {
-            $urls = array_filter(array_map('trim', explode("\n", $request->gallery_urls)));
-            $gallery = array_merge($gallery, $urls);
+
+        // 4. معالجة الروابط الإضافية
+        if ($request->filled('gallery_urls')) {
+            $urls = array_filter(array_map('trim', explode("\n", str_replace("\r", "", $request->gallery_urls))));
+            foreach ($urls as $url) {
+                if (!empty($url) && !in_array($url, $gallery)) {
+                    $gallery[] = $url;
+                }
+            }
         }
 
-        if (!$imageUrl && count($gallery) > 0) {
-            $imageUrl = $gallery[0];
-        }
+        $gallery = array_values(array_unique($gallery));
+        $mainImageUrl = count($gallery) > 0 ? $gallery[0] : null;
 
-        Product::create([
+        $product = Product::create([
             'category_id'    => $request->category_id,
             'name'           => $request->name,
             'slug'           => Str::slug($request->name) . '-' . rand(1000, 9999),
             'description'    => $request->description,
             'base_price'     => $request->base_price,
-            'image_url'      => $imageUrl,
-            'gallery_images' => count($gallery) > 0 ? json_encode($gallery) : null,
+            'image_url'      => $mainImageUrl,
+            'gallery_images' => $gallery,
             'sku'            => $request->sku ?? ('SKU-' . strtoupper(Str::random(6))),
             'is_active'      => $request->has('is_active') ? 1 : 0,
         ]);
 
-        return redirect()->route('admin.products.index')->with('success', 'تمت إضافة المنتج بنجاح!');
+        return redirect()->route('admin.products.index')->with('success', 'تمت إضافة المنتج مع جميع الصور بنجاح!');
     }
 
     public function storeCategory(Request $request)

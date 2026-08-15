@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'category_id',
         'name',
@@ -13,7 +16,15 @@ class Product extends Model
         'description',
         'base_price',
         'image_url',
+        'gallery_images',
+        'sku',
         'is_active',
+    ];
+
+    protected $casts = [
+        'gallery_images' => 'array',
+        'is_active'      => 'boolean',
+        'base_price'     => 'float',
     ];
 
     public function category()
@@ -28,6 +39,6 @@ class Product extends Model
 
     public function reviews()
     {
-        return $this->hasMany(Review::class)->where('is_approved', true)->latest();
+        return $this->hasMany(Review::class);
     }
 }

@@ -6,10 +6,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>MED EXPRESS | تجربة التسوق الرائدة بالمغرب - الدفع عند الاستلام</title>
     
-    <!-- Tailwind CSS with Typography & Forms -->
+    <!-- Tailwind CSS Engine -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts: Tajawal for Arabic & Plus Jakarta Sans for Numbers -->
+    <!-- Google Fonts: Tajawal & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
@@ -44,8 +44,9 @@
                         en: ['Plus Jakarta Sans', 'sans-serif'],
                     },
                     boxShadow: {
-                        'premium': '0 20px 50px -12px rgba(0, 0, 0, 0.08)',
-                        'card-hover': '0 30px 60px -15px rgba(16, 185, 129, 0.15)',
+                        'premium': '0 20px 50px -12px rgba(0, 0, 0, 0.07)',
+                        'card-hover': '0 30px 60px -15px rgba(16, 185, 129, 0.18)',
+                        'glow': '0 0 25px -5px rgba(16, 185, 129, 0.4)',
                     }
                 }
             }
@@ -60,14 +61,13 @@
         }
         .font-en { font-family: 'Plus Jakarta Sans', sans-serif; }
         
-        /* Glassmorphism Classes */
-        .glass-nav {
+        .glass-header {
             background: rgba(255, 255, 255, 0.88);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
         }
         
-        .hero-mesh {
+        .hero-gradient {
             background-image: 
                 radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
                 radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 40%),
@@ -83,11 +83,11 @@
 
         .cta-glow {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.5);
+            box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.45);
             transition: all 0.3s ease;
         }
         .cta-glow:hover {
-            box-shadow: 0 15px 35px -5px rgba(16, 185, 129, 0.7);
+            box-shadow: 0 15px 35px -5px rgba(16, 185, 129, 0.65);
             transform: scale(1.02);
         }
 
@@ -100,17 +100,6 @@
             100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
         }
 
-        /* Carousel Slides */
-        .carousel-track {
-            display: flex;
-            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-        .carousel-slide {
-            flex: 0 0 100%;
-            width: 100%;
-        }
-
-        /* Hide Scrollbars */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -161,7 +150,7 @@
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
                 </span>
                 <span class="font-black text-brand-400">توصيل مجاني وسريع 24-48H</span>
-                <span class="text-slate-400 hidden md:inline">| الدفع نقداً عند الاستلام بعد فحص السلعة ومعاينتها في يدك</span>
+                <span class="text-slate-400 hidden md:inline">| الدفع نقداً عند الاستلام بعد فحص ومعاينة السلعة في يدك</span>
             </div>
             
             <div class="flex items-center gap-4">
@@ -177,11 +166,11 @@
         </div>
     </div>
 
-    <!-- 🌟 Glassmorphic Navigation Header -->
-    <header class="glass-nav sticky top-[37px] z-40 border-b border-slate-200/80 shadow-sm">
+    <!-- 🌟 Navigation Header -->
+    <header class="glass-header sticky top-[37px] z-40 border-b border-slate-200/80 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-8 py-3.5 flex justify-between items-center">
             
-            <!-- Brand Logo -->
+            <!-- Brand Identity -->
             <div class="flex items-center gap-3.5">
                 <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-600 via-teal-500 to-emerald-400 p-[1px] shadow-lg shadow-brand-500/20">
                     <div class="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center text-brand-400 font-black text-xl font-en">
@@ -196,7 +185,7 @@
                 </div>
             </div>
 
-            <!-- Quick Navigation Links -->
+            <!-- Header Quick Links -->
             <div class="hidden md:flex items-center gap-8 text-xs font-bold text-slate-600">
                 <a href="#catalogSection" class="hover:text-brand-600 transition flex items-center gap-1.5">
                     <span>🛍️</span>
@@ -212,7 +201,7 @@
                 </a>
             </div>
 
-            <!-- Action Button -->
+            <!-- CTA Action -->
             <div class="flex items-center gap-3">
                 <a href="#catalogSection" class="bg-slate-950 hover:bg-brand-600 text-white text-xs font-black px-5 py-2.5 rounded-full transition duration-300 shadow active:scale-95 flex items-center gap-2">
                     <span>تصفح العروض</span>
@@ -225,15 +214,15 @@
 
     <main class="space-y-16 py-6">
 
-        <!-- 🚀 Flagship Hero Heroic Banner -->
+        <!-- 🚀 Flagship Hero Banner -->
         <section class="max-w-7xl mx-auto px-4 sm:px-8">
-            <div class="hero-mesh bg-gradient-to-b from-white via-slate-50/80 to-white border border-slate-200/90 rounded-[3rem] p-8 sm:p-14 relative overflow-hidden shadow-sm">
+            <div class="hero-gradient bg-gradient-to-b from-white via-slate-50/80 to-white border border-slate-200/90 rounded-[3rem] p-8 sm:p-14 relative overflow-hidden shadow-sm">
                 
                 <div class="max-w-3xl space-y-6 text-right relative z-10">
                     
                     <div class="inline-flex items-center gap-2.5 bg-brand-50 border border-brand-200/80 text-brand-700 px-4 py-1.5 rounded-full text-xs font-black shadow-sm">
                         <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
-                        <span>المنتجات الأصلية 100% مع ضمان الفحص والمعاينة قبل الأداء</span>
+                        <span>المنتجات الأصلية 100% مع ضمان الفحص والمعاينة قبل الدفع</span>
                     </div>
 
                     <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-950 tracking-tight leading-[1.18]">
@@ -244,7 +233,7 @@
                     </h1>
 
                     <p class="text-slate-600 text-sm sm:text-base leading-relaxed max-w-xl font-medium">
-                        نوفر لك أفضل المنتجات العملية والأصلية في السوق المغربي. استلم طردك في أي مدينة أو قرية، افحص جودته ومطابقته بنفسك، ثم ادفع نقداً بكل راحة واطمئنان.
+                        نوفر لك أفضل المنتجات العملية والأصلية في السوق المغربي. استلم طردك في أي مدينة، افحص جودته ومطابقته بنفسك، ثم ادفع نقداً بكل راحة واطمئنان.
                     </p>
 
                     <div class="pt-2 flex flex-wrap items-center gap-4">
@@ -253,7 +242,7 @@
                         </a>
                         <div class="flex items-center gap-2 bg-white px-5 py-3 rounded-full border border-slate-200 text-xs text-slate-700 font-bold shadow-sm">
                             <span class="text-amber-400">★★★★★</span>
-                            <span class="font-en">4.9 / 5 (8,500+ زبون مغربي يثق بنا)</span>
+                            <span class="font-en">4.9 / 5 (8,500+ زبون راضٍ بالمغرب)</span>
                         </div>
                     </div>
 
@@ -262,7 +251,7 @@
             </div>
         </section>
 
-        <!-- 🛡️ 4 Trust Pillar Cards -->
+        <!-- 🛡️ Trust Badges -->
         <section id="trustSection" class="max-w-7xl mx-auto px-4 sm:px-8">
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 
@@ -301,7 +290,7 @@
             </div>
         </section>
 
-        <!-- 🛍️ Product Catalog & Interactive Carousel Section -->
+        <!-- 🛍️ Product Catalog Section -->
         <section id="catalogSection" class="max-w-7xl mx-auto px-4 sm:px-8 space-y-8">
             
             <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-5 border-b border-slate-200 pb-6">
@@ -310,7 +299,7 @@
                     <h2 class="text-2xl sm:text-4xl font-black text-slate-950 tracking-tight">المنتجات الأكثر طلباً وتوفراً في المخزون 🔥</h2>
                 </div>
 
-                <!-- Instant Search Box -->
+                <!-- Instant Search Input -->
                 <div class="w-full md:w-80">
                     <div class="relative">
                         <input type="text" id="productSearch" onkeyup="filterLiveCatalog()" placeholder="ابحث عن أي منتج..." class="w-full bg-white border border-slate-300 rounded-full px-5 py-3 text-xs text-slate-900 placeholder-slate-400 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 shadow-sm transition">
@@ -319,42 +308,35 @@
                 </div>
             </div>
 
-            <!-- Products Grid with Advanced Sliders -->
+            <!-- Products Grid -->
             <div id="catalogGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 @forelse($products as $product)
                     @php
-                        // استخراج وتجهيز جميع صور المنتج في مصفوفة نظيفة
-                        $allImages = [];
+                        $imagesList = [];
                         
-                        // 1. الصورة الرئيسية
-                        if ($product->image_url) {
-                            $src = $product->image_url;
-                            if (!str_starts_with($src, 'http') && !str_starts_with($src, '/storage/')) {
-                                $src = '/storage/' . $src;
-                            }
-                            $allImages[] = $src;
-                        }
-
-                        // 2. صور المعرض الإضافية
+                        // 1. جلب الصور من مصفوفة gallery_images
                         if (!empty($product->gallery_images)) {
-                            $decoded = is_string($product->gallery_images) ? json_decode($product->gallery_images, true) : $product->gallery_images;
+                            $decoded = is_array($product->gallery_images) ? $product->gallery_images : json_decode($product->gallery_images, true);
                             if (is_array($decoded)) {
-                                foreach ($decoded as $gImg) {
-                                    if ($gImg) {
-                                        if (!str_starts_with($gImg, 'http') && !str_starts_with($gImg, '/storage/')) {
-                                            $gImg = '/storage/' . $gImg;
-                                        }
-                                        if (!in_array($gImg, $allImages)) {
-                                            $allImages[] = $gImg;
-                                        }
+                                foreach ($decoded as $img) {
+                                    if ($img) {
+                                        $imagesList[] = (!str_starts_with($img, 'http') && !str_starts_with($img, '/storage/')) ? '/storage/' . $img : $img;
                                     }
                                 }
                             }
                         }
 
-                        // صورة احتياطية في حالة عدم توفر أي صورة
-                        if (count($allImages) === 0) {
-                            $allImages[] = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800';
+                        // 2. فحص الصورة الرئيسية image_url
+                        if ($product->image_url) {
+                            $mainSrc = (!str_starts_with($product->image_url, 'http') && !str_starts_with($product->image_url, '/storage/')) ? '/storage/' . $product->image_url : $product->image_url;
+                            if (!in_array($mainSrc, $imagesList)) {
+                                array_unshift($imagesList, $mainSrc);
+                            }
+                        }
+
+                        // صورة احتياطية
+                        if (count($imagesList) === 0) {
+                            $imagesList[] = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800';
                         }
                     @endphp
 
@@ -362,50 +344,65 @@
                         
                         <div class="space-y-4">
                             
-                            <!-- 📸 Multi-Image Interactive Carousel Viewport -->
-                            <div class="h-72 bg-gradient-to-b from-slate-50 to-slate-100/80 rounded-3xl overflow-hidden relative border border-slate-100 flex items-center justify-center select-none" id="carousel-wrapper-{{ $product->id }}">
+                            <!-- 📸 Multi-Image Interactive Box (Slider + Thumbnails) -->
+                            <div class="space-y-3">
                                 
-                                <span class="absolute top-3.5 right-3.5 bg-red-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow z-20">
-                                    تخفيض 35% 🔥
-                                </span>
+                                <div class="h-72 bg-gradient-to-b from-slate-50 to-slate-100/80 rounded-3xl overflow-hidden relative border border-slate-100 flex items-center justify-center select-none">
+                                    
+                                    <span class="absolute top-3.5 right-3.5 bg-red-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow z-20">
+                                        تخفيض 35% 🔥
+                                    </span>
 
-                                <span class="absolute top-3.5 left-3.5 bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-md backdrop-blur z-20">
-                                    متوفر بالمخزون ✓
-                                </span>
+                                    <span class="absolute top-3.5 left-3.5 bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-md backdrop-blur z-20">
+                                        متوفر بالمخزون ✓
+                                    </span>
 
-                                <!-- Carousel Track containing all images -->
-                                <div class="carousel-track h-full w-full" id="track-{{ $product->id }}">
-                                    @foreach($allImages as $idx => $img)
-                                        <div class="carousel-slide h-full w-full flex items-center justify-center p-4">
-                                            <img src="{{ $img }}" 
-                                                 alt="{{ $product->name }} - صورة {{ $idx + 1 }}" 
-                                                 class="max-h-full max-w-full object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-500"
-                                                 loading="lazy"
-                                                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800';">
+                                    <!-- Slides Stack -->
+                                    <div class="w-full h-full relative" id="carousel-box-{{ $product->id }}">
+                                        @foreach($imagesList as $idx => $img)
+                                            <div class="carousel-slide-item w-full h-full absolute inset-0 flex items-center justify-center p-4 transition-opacity duration-300 {{ $idx === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none' }}" data-index="{{ $idx }}">
+                                                <img src="{{ $img }}" 
+                                                     alt="{{ $product->name }} - صورة {{ $idx + 1 }}" 
+                                                     class="max-h-full max-w-full object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-500"
+                                                     loading="lazy"
+                                                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800';">
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                                    <!-- Arrows Navigation (تظهر إذا تعددت الصور) -->
+                                    @if(count($imagesList) > 1)
+                                        <button type="button" onclick="changeProductSlide({{ $product->id }}, 1, {{ count($imagesList) }})" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center text-xs font-black z-20 opacity-0 group-hover:opacity-100 transition hover:scale-110 active:scale-95">
+                                            ❮
+                                        </button>
+                                        <button type="button" onclick="changeProductSlide({{ $product->id }}, -1, {{ count($imagesList) }})" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center text-xs font-black z-20 opacity-0 group-hover:opacity-100 transition hover:scale-110 active:scale-95">
+                                            ❯
+                                        </button>
+
+                                        <!-- Dots Indicator -->
+                                        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 bg-slate-950/40 backdrop-blur-md px-2.5 py-1 rounded-full" id="dots-wrap-{{ $product->id }}">
+                                            @foreach($imagesList as $idx => $img)
+                                                <button type="button" onclick="goToProductSlide({{ $product->id }}, {{ $idx }}, {{ count($imagesList) }})" class="slide-dot transition-all duration-300 {{ $idx === 0 ? 'w-3 h-1.5 bg-brand-400 rounded-full' : 'w-1.5 h-1.5 bg-white/60 rounded-full' }}" data-dot="{{ $idx }}"></button>
+                                            @endforeach
                                         </div>
-                                    @endforeach
+                                    @endif
+
                                 </div>
 
-                                <!-- Carousel Navigation Arrows (تظهر إذا كانت هناك أكثر من صورة) -->
-                                @if(count($allImages) > 1)
-                                    <button type="button" onclick="slideCarousel({{ $product->id }}, -1, {{ count($allImages) }})" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-slate-800 shadow-md flex items-center justify-center text-xs font-black z-20 opacity-0 group-hover:opacity-100 transition duration-200">
-                                        ❯
-                                    </button>
-                                    <button type="button" onclick="slideCarousel({{ $product->id }}, 1, {{ count($allImages) }})" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-slate-800 shadow-md flex items-center justify-center text-xs font-black z-20 opacity-0 group-hover:opacity-100 transition duration-200">
-                                        ❮
-                                    </button>
-
-                                    <!-- Pagination Dots Indicator -->
-                                    <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 bg-slate-950/40 backdrop-blur-md px-2.5 py-1 rounded-full" id="dots-container-{{ $product->id }}">
-                                        @foreach($allImages as $idx => $img)
-                                            <span class="dot-indicator h-1.5 rounded-full transition-all duration-300 {{ $idx === 0 ? 'w-3 bg-brand-400' : 'w-1.5 bg-white/60' }}" data-dot="{{ $idx }}"></span>
+                                <!-- Thumbnails Row: تتيح للزبون النقر والتنقل بين الصور مباشرة في الواجهة الرئيسية -->
+                                @if(count($imagesList) > 1)
+                                    <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar" id="thumbs-row-{{ $product->id }}">
+                                        @foreach($imagesList as $idx => $thumb)
+                                            <button type="button" onclick="goToProductSlide({{ $product->id }}, {{ $idx }}, {{ count($imagesList) }})" class="thumb-node w-12 h-12 rounded-xl border-2 {{ $idx === 0 ? 'border-brand-500 ring-2 ring-brand-500/20' : 'border-slate-200 hover:border-slate-400' }} overflow-hidden flex-shrink-0 bg-slate-50 p-0.5 transition" data-thumb="{{ $idx }}">
+                                                <img src="{{ $thumb }}" class="w-full h-full object-contain" alt="thumbnail">
+                                            </button>
                                         @endforeach
                                     </div>
                                 @endif
 
                             </div>
 
-                            <!-- Product Typography Details -->
+                            <!-- Typography Details -->
                             <div class="space-y-2">
                                 <span class="text-[11px] font-bold text-brand-700 bg-brand-50 px-3 py-0.5 rounded-full inline-block border border-brand-200/50">
                                     {{ $product->category->name ?? 'منتجات مميزة' }}
@@ -421,7 +418,7 @@
                             </div>
                         </div>
 
-                        <!-- Price Breakdown & Call To Action -->
+                        <!-- Price & Action -->
                         <div class="border-t border-slate-100 pt-4 mt-5 space-y-3.5">
                             <div class="flex items-center justify-between">
                                 <div>
@@ -478,7 +475,7 @@
 
     </main>
 
-    <!-- 🟢 Floating VIP WhatsApp Bubble Button -->
+    <!-- 🟢 Floating WhatsApp Support -->
     <div class="fixed bottom-6 left-6 z-50">
         <a href="https://wa.me/212773271042?text={{ rawurlencode('السلام عليكم، بغيت نستفسر على المنتجات المتوفرة في المتجر') }}" target="_blank" class="w-14 h-14 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white flex items-center justify-center text-3xl shadow-2xl pulse-ring hover:scale-110 transition-all duration-300 relative">
             💬
@@ -492,13 +489,13 @@
             🛍️
         </div>
         <div class="text-xs">
-            <p class="font-black text-slate-900"><span id="buyerName">يوسف من الرباط</span> اشترى للتو</p>
+            <p class="font-black text-slate-900"><span id="buyerName">يوسف من الدار البيضاء</span> اشترى للتو</p>
             <p class="text-[11px] text-slate-500 truncate max-w-[200px]" id="buyerProduct">ساعة ذكية فاخرة Ultra Pro</p>
-            <span class="text-[9px] text-brand-600 font-bold" id="buyerTime">منذ دقيقتين ⚡</span>
+            <span class="text-[9px] text-brand-600 font-bold" id="buyerTime">منذ دقيقة واحدة ⚡</span>
         </div>
     </div>
 
-    <!-- 👑 Signature Developer VIP Footer -->
+    <!-- 👑 Signature Developer Footer -->
     <footer class="bg-slate-950 text-white border-t border-slate-800 py-12 px-4 sm:px-8 mt-20">
         <div class="max-w-7xl mx-auto space-y-8 text-center">
             
@@ -529,41 +526,60 @@
         </div>
     </footer>
 
-    <!-- ⚙️ JavaScript Engine: Carousel, Search Filter, Social Proof, Countdown -->
+    <!-- ⚙️ JavaScript Engine -->
     <script>
-        // 1. Carousel Multi-Image Navigation Engine
-        const sliderPositions = {};
+        const activeProductSlides = {};
 
-        function slideCarousel(prodId, direction, totalSlides) {
-            if (!sliderPositions[prodId]) sliderPositions[prodId] = 0;
+        // الدالة المسؤولة عن الانتقال إلى صورة معينة وتحديث المصغرات والنقاط
+        function goToProductSlide(prodId, targetIndex, total) {
+            const box = document.getElementById(`carousel-box-${prodId}`);
+            if (!box) return;
             
-            let newIndex = sliderPositions[prodId] + direction;
-            if (newIndex >= totalSlides) newIndex = 0;
-            if (newIndex < 0) newIndex = totalSlides - 1;
+            const slides = box.querySelectorAll('.carousel-slide-item');
+            const dots = document.getElementById(`dots-wrap-${prodId}`)?.querySelectorAll('.slide-dot');
+            const thumbs = document.getElementById(`thumbs-row-${prodId}`)?.querySelectorAll('.thumb-node');
 
-            sliderPositions[prodId] = newIndex;
+            slides.forEach((slide, idx) => {
+                if (idx === targetIndex) {
+                    slide.classList.remove('opacity-0', 'z-0', 'pointer-events-none');
+                    slide.classList.add('opacity-100', 'z-10');
+                } else {
+                    slide.classList.remove('opacity-100', 'z-10');
+                    slide.classList.add('opacity-0', 'z-0', 'pointer-events-none');
+                }
+            });
 
-            const track = document.getElementById(`track-${prodId}`);
-            if (track) {
-                // RTL Slide Translation
-                track.style.transform = `translateX(${newIndex * 100}%)`;
-            }
-
-            // Update Dots
-            const dotsContainer = document.getElementById(`dots-container-${prodId}`);
-            if (dotsContainer) {
-                const dots = dotsContainer.querySelectorAll('.dot-indicator');
+            if (dots) {
                 dots.forEach((dot, idx) => {
-                    if (idx === newIndex) {
-                        dot.className = 'dot-indicator h-1.5 w-3 bg-brand-400 rounded-full transition-all duration-300';
+                    if (idx === targetIndex) {
+                        dot.className = 'slide-dot transition-all duration-300 w-3 h-1.5 bg-brand-400 rounded-full';
                     } else {
-                        dot.className = 'dot-indicator h-1.5 w-1.5 bg-white/60 rounded-full transition-all duration-300';
+                        dot.className = 'slide-dot transition-all duration-300 w-1.5 h-1.5 bg-white/60 rounded-full';
                     }
                 });
             }
+
+            if (thumbs) {
+                thumbs.forEach((thumb, idx) => {
+                    if (idx === targetIndex) {
+                        thumb.className = 'thumb-node w-12 h-12 rounded-xl border-2 border-brand-500 ring-2 ring-brand-500/20 overflow-hidden flex-shrink-0 bg-slate-50 p-0.5 transition';
+                    } else {
+                        thumb.className = 'thumb-node w-12 h-12 rounded-xl border-2 border-slate-200 hover:border-slate-400 overflow-hidden flex-shrink-0 bg-slate-50 p-0.5 transition';
+                    }
+                });
+            }
+
+            activeProductSlides[prodId] = targetIndex;
         }
 
-        // 2. Instant Live Catalog Search Filter
+        // الدالة المسؤولة عن الأسهم التالية والسابقة
+        function changeProductSlide(prodId, direction, total) {
+            let currentIndex = activeProductSlides[prodId] || 0;
+            let nextIndex = (currentIndex + direction + total) % total;
+            goToProductSlide(prodId, nextIndex, total);
+        }
+
+        // تصفية الكتالوج المباشرة
         function filterLiveCatalog() {
             const query = document.getElementById('productSearch').value.toLowerCase().trim();
             const cards = document.querySelectorAll('.product-card');
@@ -577,20 +593,20 @@
             });
         }
 
-        // 3. Live Urgency Countdown Timer
-        let totalSeconds = 13470;
+        // عداد تنازلي للعرض المحدود
+        let countdownSeconds = 13470;
         setInterval(() => {
-            totalSeconds--;
-            if (totalSeconds < 0) totalSeconds = 14400;
-            const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-            const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-            const s = String(totalSeconds % 60).padStart(2, '0');
+            countdownSeconds--;
+            if (countdownSeconds < 0) countdownSeconds = 14400;
+            const h = String(Math.floor(countdownSeconds / 3600)).padStart(2, '0');
+            const m = String(Math.floor((countdownSeconds % 3600) / 60)).padStart(2, '0');
+            const s = String(countdownSeconds % 60).padStart(2, '0');
             const el = document.getElementById('headerTimer');
             if (el) el.innerText = `${h}:${m}:${s}`;
         }, 1000);
 
-        // 4. Live Social Proof Orders Simulation
-        const recentBuyers = [
+        // محاكاة إشعارات المشترين الحية
+        const buyerSimulations = [
             { name: 'يوسف من الدار البيضاء', product: 'ساعة ذكية فاخرة Ultra Pro', time: 'منذ دقيقة واحدة' },
             { name: 'أمين من طنجة', product: 'مضخة غسيل السيارات اللاسلكية', time: 'منذ 3 دقائق' },
             { name: 'فاطمة من مراكش', product: 'ساعة ذكية فاخرة Ultra Pro', time: 'منذ 5 دقائق' },
@@ -598,14 +614,14 @@
             { name: 'سناء من أكادير', product: 'ساعة ذكية فاخرة Ultra Pro', time: 'منذ 4 دقائق' }
         ];
 
-        function showSocialProof() {
+        function triggerSocialProof() {
             const popup = document.getElementById('socialProofPopup');
             if (!popup) return;
-            const buyer = recentBuyers[Math.floor(Math.random() * recentBuyers.length)];
+            const item = buyerSimulations[Math.floor(Math.random() * buyerSimulations.length)];
             
-            document.getElementById('buyerName').innerText = buyer.name;
-            document.getElementById('buyerProduct').innerText = buyer.product;
-            document.getElementById('buyerTime').innerText = `${buyer.time} ⚡`;
+            document.getElementById('buyerName').innerText = item.name;
+            document.getElementById('buyerProduct').innerText = item.product;
+            document.getElementById('buyerTime').innerText = `${item.time} ⚡`;
 
             popup.classList.remove('translate-y-24', 'opacity-0');
             popup.classList.add('translate-y-0', 'opacity-100');
@@ -616,9 +632,8 @@
             }, 4500);
         }
 
-        setInterval(showSocialProof, 10000);
-        setTimeout(showSocialProof, 3000);
+        setInterval(triggerSocialProof, 10000);
+        setTimeout(triggerSocialProof, 3000);
     </script>
-
 </body>
 </html>
