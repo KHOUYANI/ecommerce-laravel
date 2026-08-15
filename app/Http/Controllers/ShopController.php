@@ -198,7 +198,7 @@ class ShopController extends Controller
 
         Lead::where('customer_phone', $cleanPhone)->update(['is_recovered' => true]);
 
-        // 💳 معالجة الدفع عبر YouCan Pay (Direct cURL)
+        // 💳 معالجة الدفع عبر YouCan Pay (الرابط الرسمي youcanpay.com)
         if ($validated['payment_method'] === 'card') {
             $privateKey = trim((string) env('YOUCAN_PRIVATE_KEY', ''));
 
@@ -227,7 +227,7 @@ class ShopController extends Controller
                 ],
             ];
 
-            $ch = curl_init('https://pay.youcan.shop/api/tokenize');
+            $ch = curl_init('https://youcanpay.com/api/tokenize');
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
@@ -236,8 +236,9 @@ class ShopController extends Controller
                 'Accept: application/json',
                 'Authorization: Bearer ' . $privateKey
             ]);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 25);
 
             $response = curl_exec($ch);
             $curlError = curl_error($ch);
@@ -251,8 +252,8 @@ class ShopController extends Controller
                     $isSandbox = str_contains($privateKey, 'sandbox') || str_contains($privateKey, 'test');
                     
                     $payUrl = $isSandbox 
-                        ? "https://pay.youcan.shop/sandbox/payment-gateways/tokenize/{$token}"
-                        : "https://pay.youcan.shop/payment-gateways/tokenize/{$token}";
+                        ? "https://youcanpay.com/sandbox/payment-gateways/tokenize/{$token}"
+                        : "https://youcanpay.com/payment-gateways/tokenize/{$token}";
 
                     return redirect()->away($payUrl);
                 } else {
