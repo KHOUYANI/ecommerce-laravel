@@ -198,7 +198,7 @@ class ShopController extends Controller
 
         Lead::where('customer_phone', $cleanPhone)->update(['is_recovered' => true]);
 
-        // 💳 معالجة الدفع عبر YouCan Pay (الرابط الرسمي youcanpay.com)
+        // 💳 معالجة الدفع عبر YouCan Pay بتطابق تام للـ Sandbox / Live
         if ($validated['payment_method'] === 'card') {
             $privateKey = trim((string) env('YOUCAN_PRIVATE_KEY', ''));
 
@@ -207,6 +207,11 @@ class ShopController extends Controller
                 $order->delete();
                 return redirect()->back()->with('error', '⚠️ المفتاح YOUCAN_PRIVATE_KEY غير معرف في إعدادات Railway!')->withInput();
             }
+
+            $isSandbox = str_contains($privateKey, 'sandbox') || str_contains($privateKey, 'test');
+            $endpoint = $isSandbox 
+                ? 'https://youcanpay.com/sandbox/api/tokenize' 
+                : 'https://youcanpay.com/api/tokenize';
 
             $postData = [
                 'pri_key'     => $privateKey,
@@ -227,7 +232,7 @@ class ShopController extends Controller
                 ],
             ];
 
-            $ch = curl_init('https://youcanpay.com/api/tokenize');
+            $ch = curl_init($endpoint);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
@@ -249,7 +254,6 @@ class ShopController extends Controller
                 $resData = json_decode($response, true);
                 if (isset($resData['token']['id'])) {
                     $token = $resData['token']['id'];
-                    $isSandbox = str_contains($privateKey, 'sandbox') || str_contains($privateKey, 'test');
                     
                     $payUrl = $isSandbox 
                         ? "https://youcanpay.com/sandbox/payment-gateways/tokenize/{$token}"
