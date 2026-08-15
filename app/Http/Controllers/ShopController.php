@@ -12,7 +12,6 @@ use App\Models\Lead;
 use App\Models\Review;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 
 class ShopController extends Controller
 {
@@ -199,46 +198,55 @@ class ShopController extends Controller
 
         Lead::where('customer_phone', $cleanPhone)->update(['is_recovered' => true]);
 
-        // 💳 معالجة الدفع عبر YouCan Pay
+        // 💳 معالجة الدفع عبر YouCan Pay (Direct cURL)
         if ($validated['payment_method'] === 'card') {
             $privateKey = trim((string) env('YOUCAN_PRIVATE_KEY', ''));
 
             if (empty($privateKey)) {
                 $order->items()->delete();
                 $order->delete();
-                return redirect()->back()->with('error', '⚠️ المفتاح YOUCAN_PRIVATE_KEY غير موجود في إعدادات Railway!')->withInput();
+                return redirect()->back()->with('error', '⚠️ المفتاح YOUCAN_PRIVATE_KEY غير معرف في إعدادات Railway!')->withInput();
             }
 
-            try {
-                $response = Http::withoutVerifying()
-                    ->timeout(20)
-                    ->withHeaders([
-                        'Authorization' => 'Bearer ' . $privateKey,
-                        'Accept'        => 'application/json',
-                    ])
-                    ->asForm()
-                    ->post('https://pay.youcan.shop/api/tokenize', [
-                        'pri_key'     => $privateKey,
-                        'amount'      => (int) round($totalAmount * 100),
-                        'currency'    => 'MAD',
-                        'order_id'    => $order->tracking_number,
-                        'success_url' => route('youcan.callback', ['tracking' => $order->tracking_number]) . '?status=success',
-                        'error_url'   => route('youcan.callback', ['tracking' => $order->tracking_number]) . '?status=failed',
-                        'customer'    => [
-                            'name'         => $validated['customer_name'],
-                            'address'      => $validated['address'],
-                            'zip_code'     => '53000',
-                            'city'         => $validated['city'],
-                            'state'        => $validated['city'],
-                            'country_code' => 'MA',
-                            'phone'        => $validated['customer_phone'],
-                            'email'        => 'customer_' . $order->id . '@medexpress.ma',
-                        ],
-                    ]);
+            $postData = [
+                'pri_key'     => $privateKey,
+                'amount'      => (int) round($totalAmount * 100),
+                'currency'    => 'MAD',
+                'order_id'    => $order->tracking_number,
+                'success_url' => route('youcan.callback', ['tracking' => $order->tracking_number]) . '?status=success',
+                'error_url'   => route('youcan.callback', ['tracking' => $order->tracking_number]) . '?status=failed',
+                'customer'    => [
+                    'name'         => $validated['customer_name'],
+                    'address'      => $validated['address'],
+                    'zip_code'     => '53000',
+                    'city'         => $validated['city'],
+                    'state'        => $validated['city'],
+                    'country_code' => 'MA',
+                    'phone'        => $validated['customer_phone'],
+                    'email'        => 'contact_' . $order->id . '@medexpress.ma',
+                ],
+            ];
 
-                $resData = $response->json();
+            $ch = curl_init('https://pay.youcan.shop/api/tokenize');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'Accept: application/json',
+                'Authorization: Bearer ' . $privateKey
+            ]);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 20);
 
-                if ($response->successful() && isset($resData['token']['id'])) {
+            $response = curl_exec($ch);
+            $curlError = curl_error($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($response) {
+                $resData = json_decode($response, true);
+                if (isset($resData['token']['id'])) {
                     $token = $resData['token']['id'];
                     $isSandbox = str_contains($privateKey, 'sandbox') || str_contains($privateKey, 'test');
                     
@@ -250,13 +258,13 @@ class ShopController extends Controller
                 } else {
                     $order->items()->delete();
                     $order->delete();
-                    $errText = $resData['message'] ?? $response->body() ?? 'رفض الاتصال من بوابة الدفع';
-                    return redirect()->back()->with('error', '❌ فشل الاتصال مع YouCan Pay: ' . $errText)->withInput();
+                    $msg = $resData['message'] ?? $response;
+                    return redirect()->back()->with('error', "❌ YouCan [{$httpCode}]: {$msg}")->withInput();
                 }
-            } catch (\Exception $e) {
+            } else {
                 $order->items()->delete();
                 $order->delete();
-                return redirect()->back()->with('error', '❌ خطأ تقني في الاتصال: ' . $e->getMessage())->withInput();
+                return redirect()->back()->with('error', '❌ فشل الاتصال بالسيرفر: ' . ($curlError ?: 'No response received'))->withInput();
             }
         }
 
