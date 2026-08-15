@@ -74,10 +74,8 @@
     </header>
 
     @php
-        // 1. تجميع وتنظيف كل صور المنتج بدون أي خطأ
         $allImages = [];
 
-        // معالجة gallery_images سواء كانت مصفوفة جاهزة أو نص JSON
         if (!empty($product->gallery_images)) {
             $rawGallery = is_array($product->gallery_images) 
                 ? $product->gallery_images 
@@ -94,7 +92,6 @@
             }
         }
 
-        // معالجة الصورة الرئيسية image_url
         if ($product->image_url) {
             $mainImg = (!str_starts_with($product->image_url, 'http') && !str_starts_with($product->image_url, '/storage/')) 
                 ? '/storage/' . $product->image_url 
@@ -105,7 +102,6 @@
             }
         }
 
-        // صورة احتياطية
         if (count($allImages) === 0) {
             $allImages[] = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800';
         }
@@ -269,7 +265,8 @@
                 <!-- 🟢 Fast WhatsApp Order Button -->
                 <form action="{{ route('order.whatsappQuick') }}" method="POST" class="mb-4">
                     @csrf
-                    <input type="hidden" name="variant_id" value="{{ $product->variants->first()->id ?? 1 }}">
+                    <input type="hidden" name="product_id" value="{{ $product->id }}">
+                    <input type="hidden" name="variant_id" value="{{ $product->variants->first()->id ?? '' }}">
                     <button type="submit" class="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-black py-3 rounded-2xl shadow-md transition flex items-center justify-center gap-2 text-xs">
                         <span>💬 اطلب مباشرة عبر الواتساب في ثوانٍ</span>
                     </button>
@@ -287,8 +284,21 @@
                     </div>
                 @endif
 
+                @if ($errors->any())
+                    <div class="bg-red-50 text-red-600 border border-red-200 text-xs font-bold p-3 rounded-xl mb-4">
+                        <ul class="list-disc list-inside">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <form action="{{ route('order.checkout') }}" method="POST" class="space-y-4 text-xs font-bold">
                     @csrf
+
+                    <!-- 🔥 الحقل الأساسي لتمرير معرف المنتج -->
+                    <input type="hidden" name="product_id" value="{{ $product->id }}">
 
                     <!-- 🎁 Quantity Bundles Radio Boxes -->
                     <div>
@@ -335,7 +345,7 @@
                     @if($product->variants && $product->variants->count() > 0)
                         <div>
                             <label class="block text-slate-700 mb-1.5">اختر المقاس / اللون:</label>
-                            <select id="variantSelect" name="variant_id" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none" onchange="updateLivePrice()">
+                            <select id="variantSelect" name="variant_id" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none" onchange="updateLivePrice()">
                                 @foreach($product->variants as $variant)
                                     <option value="{{ $variant->id }}" data-price="{{ $product->base_price + $variant->additional_price }}">
                                         {{ $variant->size ? 'مقاس: ' . $variant->size : '' }} 
@@ -349,12 +359,12 @@
 
                     <div>
                         <label class="block text-slate-700 mb-1.5">الاسم والنسب الكامل * :</label>
-                        <input type="text" id="customer_name_input" name="customer_name" placeholder="مثال: يوسف الإدريسي" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none">
+                        <input type="text" id="customer_name_input" name="customer_name" value="{{ old('customer_name') }}" placeholder="مثال: يوسف الإدريسي" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none">
                     </div>
 
                     <div>
                         <label class="block text-slate-700 mb-1.5">رقم الهاتف (الواتساب) * :</label>
-                        <input type="tel" id="customer_phone_input" name="customer_phone" placeholder="06XXXXXXXX" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none text-left font-mono" dir="ltr">
+                        <input type="tel" id="customer_phone_input" name="customer_phone" value="{{ old('customer_phone') }}" placeholder="06XXXXXXXX" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none text-left font-mono" dir="ltr">
                     </div>
 
                     <div>
@@ -377,7 +387,7 @@
 
                     <div>
                         <label class="block text-slate-700 mb-1.5">العنوان بالتفصيل (الحي / رقم المنزل) * :</label>
-                        <textarea id="address_textarea" name="address" rows="2" placeholder="الحي، الإقامة، رقم الباب أو قرب مكان معروف..." required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
+                        <textarea id="address_textarea" name="address" rows="2" placeholder="الحي، الإقامة، رقم الباب أو قرب مكان معروف..." required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none">{{ old('address') }}</textarea>
                     </div>
 
                     <!-- Coupon Input Section -->
