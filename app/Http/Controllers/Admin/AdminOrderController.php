@@ -127,6 +127,16 @@ class AdminOrderController extends Controller
         return redirect()->back()->with('success', 'تم تحديث حالة الطلبية بنجاح!');
     }
 
+    // 🗑️ دالة حذف الطلبية
+    public function destroy($id)
+    {
+        $order = Order::findOrFail($id);
+        $order->items()->delete();
+        $order->delete();
+
+        return redirect()->back()->with('success', 'تم حذف الطلبية بنجاح نهائياً!');
+    }
+
     // تحديث الحالة بالسحب والإفلات AJAX للكانبان
     public function ajaxUpdateStatus(Request $request, $id)
     {
@@ -370,20 +380,21 @@ class AdminOrderController extends Controller
         $product->update(['is_active' => !$product->is_active]);
         return redirect()->back()->with('success', 'تم تغيير حالة توفر المنتج بنجاح!');
     }
+
     public function storeCategory(Request $request)
-{
-    $request->validate([
-        'name' => 'required|string|max:255|unique:categories,name'
-    ]);
+    {
+        $request->validate([
+            'name' => 'required|string|max:255|unique:categories,name'
+        ]);
 
-    $category = \App\Models\Category::create([
-        'name' => $request->name,
-        'slug' => \Illuminate\Support\Str::slug($request->name) . '-' . rand(100, 999),
-    ]);
+        $category = \App\Models\Category::create([
+            'name' => $request->name,
+            'slug' => \Illuminate\Support\Str::slug($request->name) . '-' . rand(100, 999),
+        ]);
 
-    return response()->json([
-        'success' => true,
-        'category' => $category
-    ]);
-}
+        return response()->json([
+            'success' => true,
+            'category' => $category
+        ]);
+    }
 }
