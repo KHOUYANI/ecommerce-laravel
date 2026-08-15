@@ -199,31 +199,38 @@
                             <span class="text-base">📦</span>
                             <span>إدارة الطلبيات (Orders)</span>
                         </div>
-                        <span class="bg-brand-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-md font-en">{{ $stats['new_orders'] }}</span>
+                        <span class="bg-brand-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-md font-en">{{ $stats['new_orders'] ?? 0 }}</span>
                     </a>
 
-                    @if(Auth::check() && Auth::user()->role === 'admin')
-                        <a href="{{ route('admin.products.list') }}" class="flex items-center justify-between px-3.5 py-3 rounded-2xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900/60 transition">
-                            <div class="flex items-center gap-3">
-                                <span class="text-base">🛍️</span>
-                                <span>المنتجات والمخزون</span>
-                            </div>
-                        </a>
+                    <!-- Products Links -->
+                    <a href="{{ route('admin.products.create') }}" class="flex items-center justify-between px-3.5 py-3 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition">
+                        <div class="flex items-center gap-3">
+                            <span class="text-base">➕</span>
+                            <span>إضافة منتج جديد</span>
+                        </div>
+                        <span class="text-[10px] bg-emerald-500 text-slate-950 px-1.5 py-0.5 rounded font-black">NEW</span>
+                    </a>
 
-                        <a href="{{ route('admin.leads.index') }}" class="flex items-center justify-between px-3.5 py-3 rounded-2xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900/60 transition">
-                            <div class="flex items-center gap-3">
-                                <span class="text-base">🛒</span>
-                                <span>السلات المتروكة (Leads)</span>
-                            </div>
-                        </a>
+                    <a href="{{ route('admin.products.index') }}" class="flex items-center justify-between px-3.5 py-3 rounded-2xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900/60 transition">
+                        <div class="flex items-center gap-3">
+                            <span class="text-base">🛍️</span>
+                            <span>المنتجات والمخزون</span>
+                        </div>
+                    </a>
 
-                        <a href="{{ route('admin.settings') }}" class="flex items-center justify-between px-3.5 py-3 rounded-2xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900/60 transition">
-                            <div class="flex items-center gap-3">
-                                <span class="text-base">⚙️</span>
-                                <span>التسويق والكوبونات</span>
-                            </div>
-                        </a>
-                    @endif
+                    <a href="{{ route('admin.leads.index') }}" class="flex items-center justify-between px-3.5 py-3 rounded-2xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900/60 transition">
+                        <div class="flex items-center gap-3">
+                            <span class="text-base">🛒</span>
+                            <span>السلات المتروكة (Leads)</span>
+                        </div>
+                    </a>
+
+                    <a href="{{ route('admin.settings') }}" class="flex items-center justify-between px-3.5 py-3 rounded-2xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900/60 transition">
+                        <div class="flex items-center gap-3">
+                            <span class="text-base">⚙️</span>
+                            <span>التسويق والكوبونات</span>
+                        </div>
+                    </a>
 
                     <div class="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 pt-4 mb-2 font-en">TOOLS & EXPORTS</div>
 
@@ -300,6 +307,11 @@
                         </button>
                     </div>
 
+                    <!-- ➕ Add Product Top Button -->
+                    <a href="{{ route('admin.products.create') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition active:scale-95 shadow">
+                        <span>➕ إضافة منتج</span>
+                    </a>
+
                     <!-- 📊 Open Profit Calculator Button -->
                     <button type="button" onclick="document.getElementById('profitModal').classList.remove('hidden')" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition active:scale-95 shadow">
                         <span>📊 الأرباح</span>
@@ -347,7 +359,7 @@
                             <span>إجمالي الطلبيات</span>
                             <span class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-center text-sm border border-slate-200 dark:border-white/5">📦</span>
                         </div>
-                        <div class="text-3xl font-black text-slate-900 dark:text-white font-en tracking-tight">{{ $stats['total_orders'] }}</div>
+                        <div class="text-3xl font-black text-slate-900 dark:text-white font-en tracking-tight">{{ $stats['total_orders'] ?? 0 }}</div>
                         <div class="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
                             <span class="text-brand-600 dark:text-brand-400 font-bold font-en">100%</span>
                             <span>الطلبيات المسجلة بالموقع</span>
@@ -359,7 +371,7 @@
                             <span>طلبيات جديدة (À traiter)</span>
                             <span class="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-sm border border-amber-200 dark:border-amber-500/20">⚡</span>
                         </div>
-                        <div class="text-3xl font-black text-amber-600 dark:text-amber-400 font-en tracking-tight">{{ $stats['new_orders'] }}</div>
+                        <div class="text-3xl font-black text-amber-600 dark:text-amber-400 font-en tracking-tight">{{ $stats['new_orders'] ?? 0 }}</div>
                         <div class="flex items-center gap-2 text-[10px] text-amber-700 dark:text-amber-400/80 font-medium">
                             <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
                             <span>تتطلب التأكيد الهاتفي الفوري</span>
@@ -371,41 +383,28 @@
                             <span>تم التوصيل (Livré)</span>
                             <span class="w-8 h-8 rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center text-sm border border-brand-200 dark:border-brand-500/20">✓</span>
                         </div>
-                        <div class="text-3xl font-black text-brand-600 dark:text-brand-400 font-en tracking-tight">{{ $stats['delivered'] }}</div>
+                        <div class="text-3xl font-black text-brand-600 dark:text-brand-400 font-en tracking-tight">{{ $stats['delivered'] ?? 0 }}</div>
                         <div class="flex items-center gap-2 text-[10px] text-brand-700 dark:text-brand-400/80 font-medium">
                             <span>نسبة التوصيل:</span>
-                            <span class="font-black font-en">{{ $stats['total_orders'] > 0 ? round(($stats['delivered'] / $stats['total_orders']) * 100, 1) : 0 }}%</span>
+                            <span class="font-black font-en">{{ ($stats['total_orders'] ?? 0) > 0 ? round(($stats['delivered'] / $stats['total_orders']) * 100, 1) : 0 }}%</span>
                         </div>
                     </div>
 
-                    @if(Auth::check() && Auth::user()->role === 'admin')
-                        <div class="glass-card p-6 rounded-3xl space-y-3 relative overflow-hidden">
-                            <div class="flex justify-between items-center text-cyan-600 dark:text-cyan-400 text-xs font-bold">
-                                <span>المداخيل المحصلة</span>
-                                <span class="w-8 h-8 rounded-xl bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center text-sm border border-cyan-200 dark:border-cyan-500/20">💵</span>
-                            </div>
-                            <div class="text-3xl font-black text-slate-900 dark:text-white font-en tracking-tight">
-                                {{ number_format($stats['total_revenue'], 2) }} <span class="text-xs font-sans font-bold text-brand-600 dark:text-brand-400">DH</span>
-                            </div>
-                            <div class="flex items-center gap-2 text-[10px] text-cyan-700 dark:text-cyan-400/80 font-medium">
-                                <span>إجمالي السيولة المقبوضة فعلياً</span>
-                            </div>
+                    <div class="glass-card p-6 rounded-3xl space-y-3 relative overflow-hidden">
+                        <div class="flex justify-between items-center text-cyan-600 dark:text-cyan-400 text-xs font-bold">
+                            <span>المداخيل المحصلة</span>
+                            <span class="w-8 h-8 rounded-xl bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center text-sm border border-cyan-200 dark:border-cyan-500/20">💵</span>
                         </div>
-                    @else
-                        <div class="glass-card p-6 rounded-3xl space-y-3 relative overflow-hidden">
-                            <div class="flex justify-between items-center text-purple-600 dark:text-purple-400 text-xs font-bold">
-                                <span>في طريق التوصيل</span>
-                                <span class="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center text-sm border border-purple-200 dark:border-purple-500/20">🚚</span>
-                            </div>
-                            <div class="text-3xl font-black text-purple-400 font-en tracking-tight">{{ $statusCounts[2] ?? 0 }}</div>
-                            <div class="flex items-center gap-2 text-[10px] text-purple-700 dark:text-purple-400/80 font-medium">
-                                <span>طرود لدى شركة الشحن والتوزيع</span>
-                            </div>
+                        <div class="text-3xl font-black text-slate-900 dark:text-white font-en tracking-tight">
+                            {{ number_format($stats['total_revenue'] ?? 0, 2) }} <span class="text-xs font-sans font-bold text-brand-600 dark:text-brand-400">DH</span>
                         </div>
-                    @endif
+                        <div class="flex items-center gap-2 text-[10px] text-cyan-700 dark:text-cyan-400/80 font-medium">
+                            <span>إجمالي السيولة المقبوضة فعلياً</span>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- 🗂️ Interactive Drag & Drop Kanban Pipeline View (Hidden by default, toggled via switcher) -->
+                <!-- 🗂️ Interactive Drag & Drop Kanban Pipeline View -->
                 <div id="kanbanViewContainer" class="hidden space-y-4">
                     <div class="flex justify-between items-center bg-brand-500/10 border border-brand-500/20 p-4 rounded-2xl text-xs font-bold text-brand-400">
                         <span>⚡ اسحب البطاقة بيدك وضعها في العمود المناسب لتغيير حالتها في الداتابيز فوراً!</span>
@@ -417,19 +416,21 @@
                         <div class="kanban-col bg-slate-100 dark:bg-slate-900/60 p-4 rounded-3xl border border-amber-500/30 space-y-3" data-status="nouveau" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="dropOrder(event, 'nouveau')">
                             <div class="flex justify-between items-center pb-2 border-b border-amber-500/20">
                                 <span class="font-black text-xs text-amber-500">⚡ جديدة (À traiter)</span>
-                                <span class="text-[10px] bg-amber-500/20 text-amber-400 font-black px-2 py-0.5 rounded-full font-en">{{ $kanbanOrders->where('status', 'nouveau')->count() }}</span>
+                                <span class="text-[10px] bg-amber-500/20 text-amber-400 font-black px-2 py-0.5 rounded-full font-en">{{ isset($kanbanOrders) ? $kanbanOrders->where('status', 'nouveau')->count() : 0 }}</span>
                             </div>
                             <div class="space-y-2.5">
-                                @foreach($kanbanOrders->where('status', 'nouveau') as $kOrder)
-                                    <div class="kanban-item bg-white dark:bg-slate-800 p-3.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-2" draggable="true" ondragstart="dragStart(event, {{ $kOrder->id }})" ondragend="dragEnd(event)">
-                                        <div class="flex justify-between items-center text-[10px]">
-                                            <span class="font-mono font-bold text-brand-500">{{ $kOrder->tracking_number }}</span>
-                                            <span class="font-black text-slate-900 dark:text-white">{{ $kOrder->total_amount }} DH</span>
+                                @if(isset($kanbanOrders))
+                                    @foreach($kanbanOrders->where('status', 'nouveau') as $kOrder)
+                                        <div class="kanban-item bg-white dark:bg-slate-800 p-3.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-2" draggable="true" ondragstart="dragStart(event, {{ $kOrder->id }})" ondragend="dragEnd(event)">
+                                            <div class="flex justify-between items-center text-[10px]">
+                                                <span class="font-mono font-bold text-brand-500">{{ $kOrder->tracking_number }}</span>
+                                                <span class="font-black text-slate-900 dark:text-white">{{ $kOrder->total_amount }} DH</span>
+                                            </div>
+                                            <div class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ $kOrder->customer_name }}</div>
+                                            <div class="text-[11px] text-slate-500 truncate">📍 {{ $kOrder->city }}</div>
                                         </div>
-                                        <div class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ $kOrder->customer_name }}</div>
-                                        <div class="text-[11px] text-slate-500 truncate">📍 {{ $kOrder->city }}</div>
-                                    </div>
-                                @endforeach
+                                    @endforeach
+                                @endif
                             </div>
                         </div>
 
@@ -437,19 +438,21 @@
                         <div class="kanban-col bg-slate-100 dark:bg-slate-900/60 p-4 rounded-3xl border border-blue-500/30 space-y-3" data-status="confirme" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="dropOrder(event, 'confirme')">
                             <div class="flex justify-between items-center pb-2 border-b border-blue-500/20">
                                 <span class="font-black text-xs text-blue-500">📞 مؤكدة (Confirmé)</span>
-                                <span class="text-[10px] bg-blue-500/20 text-blue-400 font-black px-2 py-0.5 rounded-full font-en">{{ $kanbanOrders->where('status', 'confirme')->count() }}</span>
+                                <span class="text-[10px] bg-blue-500/20 text-blue-400 font-black px-2 py-0.5 rounded-full font-en">{{ isset($kanbanOrders) ? $kanbanOrders->where('status', 'confirme')->count() : 0 }}</span>
                             </div>
                             <div class="space-y-2.5">
-                                @foreach($kanbanOrders->where('status', 'confirme') as $kOrder)
-                                    <div class="kanban-item bg-white dark:bg-slate-800 p-3.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-2" draggable="true" ondragstart="dragStart(event, {{ $kOrder->id }})" ondragend="dragEnd(event)">
-                                        <div class="flex justify-between items-center text-[10px]">
-                                            <span class="font-mono font-bold text-brand-500">{{ $kOrder->tracking_number }}</span>
-                                            <span class="font-black text-slate-900 dark:text-white">{{ $kOrder->total_amount }} DH</span>
+                                @if(isset($kanbanOrders))
+                                    @foreach($kanbanOrders->where('status', 'confirme') as $kOrder)
+                                        <div class="kanban-item bg-white dark:bg-slate-800 p-3.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-2" draggable="true" ondragstart="dragStart(event, {{ $kOrder->id }})" ondragend="dragEnd(event)">
+                                            <div class="flex justify-between items-center text-[10px]">
+                                                <span class="font-mono font-bold text-brand-500">{{ $kOrder->tracking_number }}</span>
+                                                <span class="font-black text-slate-900 dark:text-white">{{ $kOrder->total_amount }} DH</span>
+                                            </div>
+                                            <div class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ $kOrder->customer_name }}</div>
+                                            <div class="text-[11px] text-slate-500 truncate">📍 {{ $kOrder->city }}</div>
                                         </div>
-                                        <div class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ $kOrder->customer_name }}</div>
-                                        <div class="text-[11px] text-slate-500 truncate">📍 {{ $kOrder->city }}</div>
-                                    </div>
-                                @endforeach
+                                    @endforeach
+                                @endif
                             </div>
                         </div>
 
@@ -457,19 +460,21 @@
                         <div class="kanban-col bg-slate-100 dark:bg-slate-900/60 p-4 rounded-3xl border border-purple-500/30 space-y-3" data-status="en_livraison" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="dropOrder(event, 'en_livraison')">
                             <div class="flex justify-between items-center pb-2 border-b border-purple-500/20">
                                 <span class="font-black text-xs text-purple-500">🚚 في التوصيل (En livraison)</span>
-                                <span class="text-[10px] bg-purple-500/20 text-purple-400 font-black px-2 py-0.5 rounded-full font-en">{{ $kanbanOrders->where('status', 'en_livraison')->count() }}</span>
+                                <span class="text-[10px] bg-purple-500/20 text-purple-400 font-black px-2 py-0.5 rounded-full font-en">{{ isset($kanbanOrders) ? $kanbanOrders->where('status', 'en_livraison')->count() : 0 }}</span>
                             </div>
                             <div class="space-y-2.5">
-                                @foreach($kanbanOrders->where('status', 'en_livraison') as $kOrder)
-                                    <div class="kanban-item bg-white dark:bg-slate-800 p-3.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-2" draggable="true" ondragstart="dragStart(event, {{ $kOrder->id }})" ondragend="dragEnd(event)">
-                                        <div class="flex justify-between items-center text-[10px]">
-                                            <span class="font-mono font-bold text-brand-500">{{ $kOrder->tracking_number }}</span>
-                                            <span class="font-black text-slate-900 dark:text-white">{{ $kOrder->total_amount }} DH</span>
+                                @if(isset($kanbanOrders))
+                                    @foreach($kanbanOrders->where('status', 'en_livraison') as $kOrder)
+                                        <div class="kanban-item bg-white dark:bg-slate-800 p-3.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-2" draggable="true" ondragstart="dragStart(event, {{ $kOrder->id }})" ondragend="dragEnd(event)">
+                                            <div class="flex justify-between items-center text-[10px]">
+                                                <span class="font-mono font-bold text-brand-500">{{ $kOrder->tracking_number }}</span>
+                                                <span class="font-black text-slate-900 dark:text-white">{{ $kOrder->total_amount }} DH</span>
+                                            </div>
+                                            <div class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ $kOrder->customer_name }}</div>
+                                            <div class="text-[11px] text-slate-500 truncate">📍 {{ $kOrder->city }}</div>
                                         </div>
-                                        <div class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ $kOrder->customer_name }}</div>
-                                        <div class="text-[11px] text-slate-500 truncate">📍 {{ $kOrder->city }}</div>
-                                    </div>
-                                @endforeach
+                                    @endforeach
+                                @endif
                             </div>
                         </div>
 
@@ -477,19 +482,21 @@
                         <div class="kanban-col bg-slate-100 dark:bg-slate-900/60 p-4 rounded-3xl border border-emerald-500/30 space-y-3" data-status="livre" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="dropOrder(event, 'livre')">
                             <div class="flex justify-between items-center pb-2 border-b border-emerald-500/20">
                                 <span class="font-black text-xs text-emerald-500">✓ تم الاستلام (Livré)</span>
-                                <span class="text-[10px] bg-emerald-500/20 text-emerald-400 font-black px-2 py-0.5 rounded-full font-en">{{ $kanbanOrders->where('status', 'livre')->count() }}</span>
+                                <span class="text-[10px] bg-emerald-500/20 text-emerald-400 font-black px-2 py-0.5 rounded-full font-en">{{ isset($kanbanOrders) ? $kanbanOrders->where('status', 'livre')->count() : 0 }}</span>
                             </div>
                             <div class="space-y-2.5">
-                                @foreach($kanbanOrders->where('status', 'livre') as $kOrder)
-                                    <div class="kanban-item bg-white dark:bg-slate-800 p-3.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-2" draggable="true" ondragstart="dragStart(event, {{ $kOrder->id }})" ondragend="dragEnd(event)">
-                                        <div class="flex justify-between items-center text-[10px]">
-                                            <span class="font-mono font-bold text-brand-500">{{ $kOrder->tracking_number }}</span>
-                                            <span class="font-black text-slate-900 dark:text-white">{{ $kOrder->total_amount }} DH</span>
+                                @if(isset($kanbanOrders))
+                                    @foreach($kanbanOrders->where('status', 'livre') as $kOrder)
+                                        <div class="kanban-item bg-white dark:bg-slate-800 p-3.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-2" draggable="true" ondragstart="dragStart(event, {{ $kOrder->id }})" ondragend="dragEnd(event)">
+                                            <div class="flex justify-between items-center text-[10px]">
+                                                <span class="font-mono font-bold text-brand-500">{{ $kOrder->tracking_number }}</span>
+                                                <span class="font-black text-slate-900 dark:text-white">{{ $kOrder->total_amount }} DH</span>
+                                            </div>
+                                            <div class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ $kOrder->customer_name }}</div>
+                                            <div class="text-[11px] text-slate-500 truncate">📍 {{ $kOrder->city }}</div>
                                         </div>
-                                        <div class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ $kOrder->customer_name }}</div>
-                                        <div class="text-[11px] text-slate-500 truncate">📍 {{ $kOrder->city }}</div>
-                                    </div>
-                                @endforeach
+                                    @endforeach
+                                @endif
                             </div>
                         </div>
 
@@ -584,9 +591,9 @@
                                                 </button>
                                             </td>
                                             <td class="p-4">
-                                                <span class="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-xl border {{ $order->risk_score['badge_bg'] }}">
-                                                    <span>{{ $order->risk_score['label'] }}</span>
-                                                    <span class="font-mono">({{ $order->risk_score['score'] }}%)</span>
+                                                <span class="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-xl border {{ $order->risk_score['badge_bg'] ?? '' }}">
+                                                    <span>{{ $order->risk_score['label'] ?? 'عادي' }}</span>
+                                                    <span class="font-mono">({{ $order->risk_score['score'] ?? 0 }}%)</span>
                                                 </span>
                                             </td>
                                             <td class="p-4">
@@ -807,14 +814,16 @@
                 <div>
                     <label class="block text-slate-700 dark:text-slate-300 mb-1.5">اختر المنتج والنوع المتوفر في المخزون:</label>
                     <select name="variant_id" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-3 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-brand-500">
-                        @foreach($variants as $variant)
-                            <option value="{{ $variant->id }}">
-                                {{ $variant->product->name }} 
-                                {{ $variant->size ? '- مقاس: ' . $variant->size : '' }}
-                                {{ $variant->color ? '- لون: ' . $variant->color : '' }}
-                                ({{ $variant->product->base_price + $variant->additional_price }} DH) - [متوفر: {{ $variant->stock_quantity }}]
-                            </option>
-                        @endforeach
+                        @if(isset($variants))
+                            @foreach($variants as $variant)
+                                <option value="{{ $variant->id }}">
+                                    {{ $variant->product->name }} 
+                                    {{ $variant->size ? '- مقاس: ' . $variant->size : '' }}
+                                    {{ $variant->color ? '- لون: ' . $variant->color : '' }}
+                                    ({{ $variant->product->base_price + $variant->additional_price }} DH) - [متوفر: {{ $variant->stock_quantity }}]
+                                </option>
+                            @endforeach
+                        @endif
                     </select>
                 </div>
 
@@ -1098,44 +1107,6 @@
         }
         setInterval(updateClock, 1000);
         updateClock();
-        // 🔔 Live Audio Cash Register "Ka-Ching! 💰" Sound Generator
-        function playCashRegisterSound() {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                
-                // First ding
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(987.77, audioCtx.currentTime); // B5
-                osc.frequency.exponentialRampToValueAtTime(1318.51, audioCtx.currentTime + 0.1); // E6
-                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.5);
-
-                // Coin Clinking Effect
-                setTimeout(() => {
-                    const osc2 = audioCtx.createOscillator();
-                    const gain2 = audioCtx.createGain();
-                    osc2.type = 'sine';
-                    osc2.frequency.setValueAtTime(1760, audioCtx.currentTime); // A6
-                    gain2.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                    gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-                    osc2.connect(gain2);
-                    gain2.connect(audioCtx.destination);
-                    osc2.start();
-                    osc2.stop(audioCtx.currentTime + 0.4);
-                }, 120);
-            } catch(e) {
-                console.log("Audio not supported or waiting for user interaction");
-            }
-        }
-
-        // اختبار الصوت عند الضغط على زر التحديث أو تسجيل طلبية
-        console.log("Audio Alert Engine Ready");
     </script>
 
 </body>
