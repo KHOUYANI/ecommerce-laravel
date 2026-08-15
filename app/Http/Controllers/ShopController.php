@@ -198,7 +198,7 @@ class ShopController extends Controller
 
         Lead::where('customer_phone', $cleanPhone)->update(['is_recovered' => true]);
 
-        // 💳 معالجة الدفع عبر YouCan Pay بتطابق تام للـ Sandbox / Live
+        // 💳 معالجة الدفع عبر YouCan Pay
         if ($validated['payment_method'] === 'card') {
             $privateKey = trim((string) env('YOUCAN_PRIVATE_KEY', ''));
 
@@ -254,10 +254,7 @@ class ShopController extends Controller
                 $resData = json_decode($response, true);
                 if (isset($resData['token']['id'])) {
                     $token = $resData['token']['id'];
-                    
-                    $payUrl = $isSandbox 
-                        ? "https://youcanpay.com/sandbox/payment-gateways/tokenize/{$token}"
-                        : "https://youcanpay.com/payment-gateways/tokenize/{$token}";
+                    $payUrl = "https://youcanpay.com/payment-gateways/tokenize/{$token}";
 
                     return redirect()->away($payUrl);
                 } else {
