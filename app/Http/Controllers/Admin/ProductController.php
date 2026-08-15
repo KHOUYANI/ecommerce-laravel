@@ -12,7 +12,8 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::with('category')->latest()->get();
+        // استعملنا paginate(15) باش تخدم $products->links()
+        $products = Product::with('category')->latest()->paginate(15);
         return view('admin.products.index', compact('products'));
     }
 
@@ -50,7 +51,7 @@ class ProductController extends Controller
             'is_active'   => $request->has('is_active') ? 1 : 0,
         ]);
 
-        return redirect()->route('admin.orders.index')->with('success', 'تمت إضافة ونشر المنتج بنجاح!');
+        return redirect()->route('admin.products.index')->with('success', 'تمت إضافة ونشر المنتج بنجاح!');
     }
 
     public function storeCategory(Request $request)
