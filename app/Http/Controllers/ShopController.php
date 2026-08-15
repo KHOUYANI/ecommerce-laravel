@@ -198,7 +198,7 @@ class ShopController extends Controller
 
         Lead::where('customer_phone', $cleanPhone)->update(['is_recovered' => true]);
 
-        // 💳 معالجة الدفع عبر YouCan Pay
+        // 💳 معالجة الدفع عبر YouCan Pay Widget
         if ($validated['payment_method'] === 'card') {
             $privateKey = trim((string) env('YOUCAN_PRIVATE_KEY', ''));
 
@@ -254,9 +254,7 @@ class ShopController extends Controller
                 $resData = json_decode($response, true);
                 if (isset($resData['token']['id'])) {
                     $token = $resData['token']['id'];
-                    $payUrl = "https://youcanpay.com/payment-gateways/tokenize/{$token}";
-
-                    return redirect()->away($payUrl);
+                    return redirect()->route('youcan.payPage', ['tracking' => $order->tracking_number, 'token' => $token]);
                 } else {
                     $order->items()->delete();
                     $order->delete();
@@ -273,6 +271,12 @@ class ShopController extends Controller
         // الدفع عند الاستلام (COD)
         $this->sendTelegramNotification($order, $product, $qty);
         return redirect()->route('order.success', $order->tracking_number);
+    }
+
+    public function showYouCanPayPage($tracking, $token)
+    {
+        $order = Order::where('tracking_number', $tracking)->firstOrFail();
+        return view('shop.youcan_pay', compact('order', 'token'));
     }
 
     public function youcanCallback(Request $request, $tracking)

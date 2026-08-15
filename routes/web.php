@@ -34,7 +34,8 @@ Route::post('/lead/save', [ShopController::class, 'saveLead'])->name('lead.save'
 Route::post('/product/{productId}/review', [ShopController::class, 'storeReview'])->name('product.review');
 Route::get('/order/success/{tracking}', [ShopController::class, 'orderSuccess'])->name('order.success');
 
-// 💳 مسار استقبال الزبون بعد أداء YouCan Pay
+// 💳 مسارات YouCan Pay (صفحة الدفع + Callback)
+Route::get('/payment/youcan/pay/{tracking}/{token}', [ShopController::class, 'showYouCanPayPage'])->name('youcan.payPage');
 Route::get('/payment/youcan/callback/{tracking}', [ShopController::class, 'youcanCallback'])->name('youcan.callback');
 
 Route::post('/order/{tracking}/upsell', [ShopController::class, 'addUpsell'])->name('order.upsell');
