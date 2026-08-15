@@ -49,22 +49,23 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admi
 // ==========================================
 Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () {
     
-    // Shared between Admin & Confirmation Team
+    // Orders Operations
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::post('/orders/quick-create', [AdminOrderController::class, 'quickCreateOrder'])->name('orders.quickCreate');
     Route::post('/orders/{id}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.updateStatus');
     Route::post('/orders/{id}/ajax-status', [AdminOrderController::class, 'ajaxUpdateStatus'])->name('orders.ajaxStatus');
+    Route::delete('/orders/{id}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
     Route::get('/orders/{id}/print', [AdminOrderController::class, 'printLabel'])->name('orders.print');
     Route::post('/orders/bulk-print', [AdminOrderController::class, 'bulkPrint'])->name('orders.bulkPrint');
     Route::get('/leads', [AdminOrderController::class, 'leadsIndex'])->name('leads.index');
     Route::post('/blacklist/add', [AdminOrderController::class, 'addToBlacklist'])->name('blacklist.add');
 
-    // Products Management (Resource Routes)
+    // Products Management
     Route::post('/categories/quick-store', [ProductController::class, 'storeCategory'])->name('categories.quickStore');
     Route::resource('products', ProductController::class);
     Route::post('/products/{id}/toggle', [AdminOrderController::class, 'toggleProduct'])->name('products.toggle');
 
-    // Admin-Only Privileges (Settings, Exports, Coupons)
+    // Admin Privileges
     Route::get('/orders/export', [AdminOrderController::class, 'exportCsv'])->name('orders.export');
     Route::get('/settings', [AdminOrderController::class, 'settingsPage'])->name('settings');
     Route::post('/settings', [AdminOrderController::class, 'saveSettings'])->name('settings.save');
