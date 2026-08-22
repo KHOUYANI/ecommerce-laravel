@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" class="scroll-smooth">
+<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() == 'ar' ? 'rtl' : 'ltr' }}" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>MED EXPRESS | تجربة التسوق الرائدة بالمغرب - الدفع عند الاستلام</title>
+    <title>MED EXPRESS | {{ __('تجربة التسوق الرائدة بالمغرب - الدفع عند الاستلام') }}</title>
     
     <!-- Tailwind CSS Engine -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -40,7 +40,7 @@
                         }
                     },
                     fontFamily: {
-                        sans: ['Tajawal', 'sans-serif'],
+                        sans: [{{ app()->getLocale() == 'ar' ? "'Tajawal'" : "'Plus Jakarta Sans'" }}, 'sans-serif'],
                         en: ['Plus Jakarta Sans', 'sans-serif'],
                     },
                     boxShadow: {
@@ -55,7 +55,7 @@
 
     <style>
         body { 
-            font-family: 'Tajawal', sans-serif; 
+            font-family: {{ app()->getLocale() == 'ar' ? "'Tajawal', sans-serif" : "'Plus Jakarta Sans', sans-serif" }}; 
             background-color: #F8FAFC;
             color: #0F172A;
         }
@@ -149,17 +149,17 @@
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
                 </span>
-                <span class="font-black text-brand-400">توصيل مجاني وسريع 24-48H</span>
-                <span class="text-slate-400 hidden md:inline">| الدفع نقداً عند الاستلام بعد فحص ومعاينة السلعة في يدك</span>
+                <span class="font-black text-brand-400">{{ __('توصيل سريع مجاني') }} 24-48H</span>
+                <span class="text-slate-400 hidden md:inline">| {{ __('الدفع عند الاستلام') }}</span>
             </div>
             
             <div class="flex items-center gap-4">
                 <div class="hidden sm:flex items-center gap-1.5 text-slate-300 font-en">
-                    <span class="text-amber-400">⚡ ينتهي العرض خلال:</span>
+                    <span class="text-amber-400">{{ __('⚡ ينتهي التخفيض الخاص خلال:') }}</span>
                     <span id="headerTimer" class="bg-slate-900 border border-white/10 px-2.5 py-0.5 rounded text-[11px] font-black text-white tracking-widest font-mono">03:44:30</span>
                 </div>
                 <a href="{{ route('shop.track') }}" class="text-brand-400 hover:text-brand-300 font-bold transition flex items-center gap-1.5">
-                    <span>تتبع طلبيتك</span>
+                    <span>{{ __('تتبع طلبيتك') }}</span>
                     <span>📦</span>
                 </a>
             </div>
@@ -189,22 +189,28 @@
             <div class="hidden md:flex items-center gap-8 text-xs font-bold text-slate-600">
                 <a href="#catalogSection" class="hover:text-brand-600 transition flex items-center gap-1.5">
                     <span>🛍️</span>
-                    <span>جميع المنتجات</span>
+                    <span>{{ __('جميع المنتجات') }}</span>
                 </a>
                 <a href="#trustSection" class="hover:text-brand-600 transition flex items-center gap-1.5">
                     <span>🛡️</span>
-                    <span>الضمان والتوصيل</span>
+                    <span>{{ __('ضمان الجودة واستبدال فوري عند أي مشكل') }}</span>
                 </a>
                 <a href="#faqSection" class="hover:text-brand-600 transition flex items-center gap-1.5">
                     <span>❓</span>
-                    <span>الأسئلة الشائعة</span>
+                    <span>{{ __('أسئلة شائعة') }}</span>
                 </a>
             </div>
 
-            <!-- CTA Action -->
+            <!-- Language Switcher & CTA Action -->
             <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-[10px] font-bold">
+                    <a href="{{ route('lang.switch', 'ar') }}" class="px-2 py-0.5 rounded-lg transition {{ app()->getLocale() == 'ar' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">AR</a>
+                    <a href="{{ route('lang.switch', 'fr') }}" class="px-2 py-0.5 rounded-lg transition {{ app()->getLocale() == 'fr' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">FR</a>
+                    <a href="{{ route('lang.switch', 'en') }}" class="px-2 py-0.5 rounded-lg transition {{ app()->getLocale() == 'en' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">EN</a>
+                </div>
+
                 <a href="#catalogSection" class="bg-slate-950 hover:bg-brand-600 text-white text-xs font-black px-5 py-2.5 rounded-full transition duration-300 shadow active:scale-95 flex items-center gap-2">
-                    <span>تصفح العروض</span>
+                    <span>{{ __('تصفح العروض') }}</span>
                     <span>🔥</span>
                 </a>
             </div>
@@ -218,31 +224,31 @@
         <section class="max-w-7xl mx-auto px-4 sm:px-8">
             <div class="hero-gradient bg-gradient-to-b from-white via-slate-50/80 to-white border border-slate-200/90 rounded-[3rem] p-8 sm:p-14 relative overflow-hidden shadow-sm">
                 
-                <div class="max-w-3xl space-y-6 text-right relative z-10">
+                <div class="max-w-3xl space-y-6 {{ app()->getLocale() == 'ar' ? 'text-right' : 'text-left' }} relative z-10">
                     
                     <div class="inline-flex items-center gap-2.5 bg-brand-50 border border-brand-200/80 text-brand-700 px-4 py-1.5 rounded-full text-xs font-black shadow-sm">
                         <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
-                        <span>المنتجات الأصلية 100% مع ضمان الفحص والمعاينة قبل الدفع</span>
+                        <span>{{ __('المنتجات الأصلية 100% مع ضمان الفحص والمعاينة قبل الدفع') }}</span>
                     </div>
 
                     <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-950 tracking-tight leading-[1.18]">
-                        الجودة والسرعة في متجرك، <br>
+                        {{ __('الجودة والسرعة في متجرك،') }} <br>
                         <span class="text-transparent bg-clip-text bg-gradient-to-l from-brand-600 via-teal-600 to-slate-900">
-                            تسوق بثقة وادفع عند الباب.
+                            {{ __('تسوق بثقة وادفع عند الباب.') }}
                         </span>
                     </h1>
 
                     <p class="text-slate-600 text-sm sm:text-base leading-relaxed max-w-xl font-medium">
-                        نوفر لك أفضل المنتجات العملية والأصلية في السوق المغربي. استلم طردك في أي مدينة، افحص جودته ومطابقته بنفسك، ثم ادفع نقداً بكل راحة واطمئنان.
+                        {{ __('نوفر لك أفضل المنتجات العملية والأصلية في السوق المغربي. استلم طردك في أي مدينة، افحص جودته ومطابقته بنفسك، ثم ادفع نقداً بكل راحة واطمئنان.') }}
                     </p>
 
                     <div class="pt-2 flex flex-wrap items-center gap-4">
                         <a href="#catalogSection" class="cta-glow text-white font-black px-8 py-4 rounded-full text-sm transition duration-300 active:scale-95 flex items-center gap-2">
-                            <span>اكتشف المنتجات الأكثر طلباً 👇</span>
+                            <span>{{ __('اكتشف المنتجات الأكثر طلباً 👇') }}</span>
                         </a>
                         <div class="flex items-center gap-2 bg-white px-5 py-3 rounded-full border border-slate-200 text-xs text-slate-700 font-bold shadow-sm">
                             <span class="text-amber-400">★★★★★</span>
-                            <span class="font-en">4.9 / 5 (8,500+ زبون راضٍ بالمغرب)</span>
+                            <span class="font-en">4.9 / 5 (8,500+ {{ __('زبون راضٍ بالمغرب') }})</span>
                         </div>
                     </div>
 
@@ -259,32 +265,32 @@
                     <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-2xl font-black shadow-inner">
                         🚚
                     </div>
-                    <h3 class="font-black text-slate-900 text-base">توصيل سريع مجاني</h3>
-                    <p class="text-xs text-slate-500 leading-relaxed font-normal">يصلك طلبك خلال 24 إلى 48 ساعة فقط لجميع مدن المغرب حتى باب منزلك.</p>
+                    <h3 class="font-black text-slate-900 text-base">{{ __('توصيل سريع مجاني') }}</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed font-normal">{{ __('يصلك طلبك خلال 24 إلى 48 ساعة فقط لجميع مدن المغرب حتى باب منزلك.') }}</p>
                 </div>
 
                 <div class="bg-white border border-slate-200/80 p-6 rounded-3xl space-y-2 shadow-sm hover:border-blue-500/40 transition">
                     <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl font-black shadow-inner">
                         💵
                     </div>
-                    <h3 class="font-black text-slate-900 text-base">الدفع عند الاستلام</h3>
-                    <p class="text-xs text-slate-500 leading-relaxed font-normal">افتح الطرد وعاين السلعة وتأكد من سلامتها وجودتها قبل أن تدفع أي درهم.</p>
+                    <h3 class="font-black text-slate-900 text-base">{{ __('الدفع عند الاستلام') }}</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed font-normal">{{ __('افتح الطرد وعاين السلعة وتأكد من سلامتها وجودتها قبل أن تدفع أي درهم.') }}</p>
                 </div>
 
                 <div class="bg-white border border-slate-200/80 p-6 rounded-3xl space-y-2 shadow-sm hover:border-amber-500/40 transition">
                     <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl font-black shadow-inner">
                         🛡️
                     </div>
-                    <h3 class="font-black text-slate-900 text-base">ضمان الجودة 100%</h3>
-                    <p class="text-xs text-slate-500 leading-relaxed font-normal">استبدال مجاني فوري لمدة 7 أيام في حالة وجود أي عيب مصنعي أو كسر.</p>
+                    <h3 class="font-black text-slate-900 text-base">{{ __('ضمان الجودة 100%') }}</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed font-normal">{{ __('استبدال مجاني فوري لمدة 7 أيام في حالة وجود أي عيب مصنعي أو كسر.') }}</p>
                 </div>
 
                 <div class="bg-white border border-slate-200/80 p-6 rounded-3xl space-y-2 shadow-sm hover:border-purple-500/40 transition">
                     <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-2xl font-black shadow-inner">
                         💬
                     </div>
-                    <h3 class="font-black text-slate-900 text-base">دعم واتساب 7/7</h3>
-                    <p class="text-xs text-slate-500 leading-relaxed font-normal">فريق خدمة زبناء محترف ومستعد لمساعدتك والإجابة على استفساراتك فوراً.</p>
+                    <h3 class="font-black text-slate-900 text-base">{{ __('دعم واتساب 7/7') }}</h3>
+                    <p class="text-xs text-slate-500 leading-relaxed font-normal">{{ __('فريق خدمة زبناء محترف ومستعد لمساعدتك والإجابة على استفساراتك فوراً.') }}</p>
                 </div>
 
             </div>
@@ -295,15 +301,15 @@
             
             <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-5 border-b border-slate-200 pb-6">
                 <div>
-                    <span class="text-xs font-black text-brand-600 bg-brand-50 px-3 py-1 rounded-full uppercase tracking-wider block mb-1">الكتالوج المباشر</span>
-                    <h2 class="text-2xl sm:text-4xl font-black text-slate-950 tracking-tight">المنتجات الأكثر طلباً وتوفراً في المخزون 🔥</h2>
+                    <span class="text-xs font-black text-brand-600 bg-brand-50 px-3 py-1 rounded-full uppercase tracking-wider block mb-1">{{ __('الكتالوج المباشر') }}</span>
+                    <h2 class="text-2xl sm:text-4xl font-black text-slate-950 tracking-tight">{{ __('المنتجات الأكثر طلباً وتوفراً في المخزون 🔥') }}</h2>
                 </div>
 
                 <!-- Instant Search Input -->
                 <div class="w-full md:w-80">
                     <div class="relative">
-                        <input type="text" id="productSearch" onkeyup="filterLiveCatalog()" placeholder="ابحث عن أي منتج..." class="w-full bg-white border border-slate-300 rounded-full px-5 py-3 text-xs text-slate-900 placeholder-slate-400 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 shadow-sm transition">
-                        <span class="absolute left-4 top-3 text-sm text-slate-400">🔍</span>
+                        <input type="text" id="productSearch" onkeyup="filterLiveCatalog()" placeholder="{{ __('ابحث عن أي منتج...') }}" class="w-full bg-white border border-slate-300 rounded-full px-5 py-3 text-xs text-slate-900 placeholder-slate-400 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 shadow-sm transition">
+                        <span class="absolute {{ app()->getLocale() == 'ar' ? 'left-4' : 'right-4' }} top-3 text-sm text-slate-400">🔍</span>
                     </div>
                 </div>
             </div>
@@ -314,7 +320,6 @@
                     @php
                         $imagesList = [];
                         
-                        // 1. جلب الصور من مصفوفة gallery_images
                         if (!empty($product->gallery_images)) {
                             $decoded = is_array($product->gallery_images) ? $product->gallery_images : json_decode($product->gallery_images, true);
                             if (is_array($decoded)) {
@@ -326,7 +331,6 @@
                             }
                         }
 
-                        // 2. فحص الصورة الرئيسية image_url
                         if ($product->image_url) {
                             $mainSrc = (!str_starts_with($product->image_url, 'http') && !str_starts_with($product->image_url, '/storage/')) ? '/storage/' . $product->image_url : $product->image_url;
                             if (!in_array($mainSrc, $imagesList)) {
@@ -334,7 +338,6 @@
                             }
                         }
 
-                        // صورة احتياطية
                         if (count($imagesList) === 0) {
                             $imagesList[] = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800';
                         }
@@ -349,12 +352,12 @@
                                 
                                 <div class="h-72 bg-gradient-to-b from-slate-50 to-slate-100/80 rounded-3xl overflow-hidden relative border border-slate-100 flex items-center justify-center select-none">
                                     
-                                    <span class="absolute top-3.5 right-3.5 bg-red-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow z-20">
-                                        تخفيض 35% 🔥
+                                    <span class="absolute top-3.5 {{ app()->getLocale() == 'ar' ? 'right-3.5' : 'left-3.5' }} bg-red-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow z-20">
+                                        {{ __('تخفيض 35%') }} 🔥
                                     </span>
 
-                                    <span class="absolute top-3.5 left-3.5 bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-md backdrop-blur z-20">
-                                        متوفر بالمخزون ✓
+                                    <span class="absolute top-3.5 {{ app()->getLocale() == 'ar' ? 'left-3.5' : 'right-3.5' }} bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-md backdrop-blur z-20">
+                                        {{ __('متوفر بالمخزون ✓') }}
                                     </span>
 
                                     <!-- Slides Stack -->
@@ -362,7 +365,7 @@
                                         @foreach($imagesList as $idx => $img)
                                             <div class="carousel-slide-item w-full h-full absolute inset-0 flex items-center justify-center p-4 transition-opacity duration-300 {{ $idx === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none' }}" data-index="{{ $idx }}">
                                                 <img src="{{ $img }}" 
-                                                     alt="{{ $product->name }} - صورة {{ $idx + 1 }}" 
+                                                     alt="{{ $product->name }}" 
                                                      class="max-h-full max-w-full object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-500"
                                                      loading="lazy"
                                                      onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800';">
@@ -370,7 +373,6 @@
                                         @endforeach
                                     </div>
 
-                                    <!-- Arrows Navigation (تظهر إذا تعددت الصور) -->
                                     @if(count($imagesList) > 1)
                                         <button type="button" onclick="changeProductSlide({{ $product->id }}, 1, {{ count($imagesList) }})" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md flex items-center justify-center text-xs font-black z-20 opacity-0 group-hover:opacity-100 transition hover:scale-110 active:scale-95">
                                             ❮
@@ -379,7 +381,6 @@
                                             ❯
                                         </button>
 
-                                        <!-- Dots Indicator -->
                                         <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 bg-slate-950/40 backdrop-blur-md px-2.5 py-1 rounded-full" id="dots-wrap-{{ $product->id }}">
                                             @foreach($imagesList as $idx => $img)
                                                 <button type="button" onclick="goToProductSlide({{ $product->id }}, {{ $idx }}, {{ count($imagesList) }})" class="slide-dot transition-all duration-300 {{ $idx === 0 ? 'w-3 h-1.5 bg-brand-400 rounded-full' : 'w-1.5 h-1.5 bg-white/60 rounded-full' }}" data-dot="{{ $idx }}"></button>
@@ -389,7 +390,6 @@
 
                                 </div>
 
-                                <!-- Thumbnails Row: تتيح للزبون النقر والتنقل بين الصور مباشرة في الواجهة الرئيسية -->
                                 @if(count($imagesList) > 1)
                                     <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar" id="thumbs-row-{{ $product->id }}">
                                         @foreach($imagesList as $idx => $thumb)
@@ -405,7 +405,7 @@
                             <!-- Typography Details -->
                             <div class="space-y-2">
                                 <span class="text-[11px] font-bold text-brand-700 bg-brand-50 px-3 py-0.5 rounded-full inline-block border border-brand-200/50">
-                                    {{ $product->category->name ?? 'منتجات مميزة' }}
+                                    {{ $product->category->name ?? __('منتج مميز') }}
                                 </span>
                                 
                                 <h3 class="font-black text-lg text-slate-950 group-hover:text-brand-600 transition truncate" title="{{ $product->name }}">
@@ -425,14 +425,14 @@
                                     <span class="text-xs text-slate-400 line-through block font-bold font-en">{{ $product->base_price + 100 }} DH</span>
                                     <span class="text-2xl font-black text-slate-950 font-en">{{ $product->base_price }} <span class="text-sm font-bold text-brand-600 font-sans">DH</span></span>
                                 </div>
-                                <div class="text-left text-xs font-bold text-amber-400">
+                                <div class="{{ app()->getLocale() == 'ar' ? 'text-left' : 'text-right' }} text-xs font-bold text-amber-400">
                                     <span>★★★★★</span>
-                                    <span class="block text-[10px] text-slate-400 font-normal font-en">({{ $product->reviews->count() ?? 5 }} تقييم موثوق)</span>
+                                    <span class="block text-[10px] text-slate-400 font-normal font-en">({{ $product->reviews->count() ?? 5 }} {{ __('تقييم موثوق') }})</span>
                                 </div>
                             </div>
 
                             <a href="{{ route('shop.product', $product->slug ?? $product->id) }}" class="w-full bg-slate-950 hover:bg-brand-600 text-white font-black py-4 rounded-2xl text-xs flex items-center justify-center gap-2 transition duration-300 shadow active:scale-95">
-                                <span>اطلب الآن • الدفع عند الاستلام 🛍️</span>
+                                <span>{{ __('اطلب الآن 🚀') }} • {{ __('الدفع عند الاستلام') }} 🛍️</span>
                             </a>
                         </div>
 
@@ -440,8 +440,8 @@
                 @empty
                     <div class="col-span-3 text-center py-20 bg-white rounded-[2.5rem] border border-slate-200 space-y-2">
                         <span class="text-5xl block mb-2">📦</span>
-                        <h3 class="font-black text-slate-900 text-base">لا توجد أي منتجات معروضة حالياً</h3>
-                        <p class="text-xs text-slate-400">يمكنك إضافة أول منتج من لوحة التحكم</p>
+                        <h3 class="font-black text-slate-900 text-base">{{ __('لا توجد أي منتجات معروضة حالياً') }}</h3>
+                        <p class="text-xs text-slate-400">{{ __('يمكنك إضافة أول منتج من لوحة التحكم') }}</p>
                     </div>
                 @endforelse
             </div>
@@ -451,24 +451,24 @@
         <!-- ❓ Common FAQ Accordion Section -->
         <section id="faqSection" class="max-w-4xl mx-auto px-4 sm:px-8 space-y-6">
             <div class="text-center space-y-1">
-                <span class="text-brand-600 text-xs font-bold uppercase tracking-wider">أسئلة شائعة</span>
-                <h2 class="text-2xl sm:text-3xl font-black text-slate-950">كل ما تحتاج معرفته قبل إتمام طلبك</h2>
+                <span class="text-brand-600 text-xs font-bold uppercase tracking-wider">{{ __('أسئلة شائعة') }}</span>
+                <h2 class="text-2xl sm:text-3xl font-black text-slate-950">{{ __('كل ما تحتاج معرفته قبل إتمام طلبك') }}</h2>
             </div>
 
             <div class="space-y-3 text-xs">
                 <div class="bg-white border border-slate-200/90 p-5 rounded-2xl space-y-1.5 shadow-sm">
-                    <h4 class="font-black text-slate-900 text-sm">كيف تتم عملية الشراء والدفع؟</h4>
-                    <p class="text-slate-600 leading-relaxed font-normal">العملية بسيطة جداً: تختار المنتج، تملأ معلوماتك في الاستمارة (الاسم، الهاتف، المدينة). يتصل بك فريقنا لتأكيد العنوان وشحن الطلبية فوراً. لا تدفع أي مبلغ مالي حتى يصلك الطرد وتتفحصه بنفسك.</p>
+                    <h4 class="font-black text-slate-900 text-sm">{{ __('كيف تتم عملية الشراء والدفع؟') }}</h4>
+                    <p class="text-slate-600 leading-relaxed font-normal">{{ __('العملية بسيطة جداً: تختار المنتج، تملأ معلوماتك في الاستمارة (الاسم، الهاتف، المدينة). يتصل بك فريقنا لتأكيد العنوان وشحن الطلبية فوراً. لا تدفع أي مبلغ مالي حتى يصلك الطرد وتتفحصه بنفسك.') }}</p>
                 </div>
 
                 <div class="bg-white border border-slate-200/90 p-5 rounded-2xl space-y-1.5 shadow-sm">
-                    <h4 class="font-black text-slate-900 text-sm">كم يستغرق التوصيل؟</h4>
-                    <p class="text-slate-600 leading-relaxed font-normal">يصلك الطلب خلال 24 إلى 48 ساعة كحد أقصى لجميع المدن والمناطق المغربية حتى باب منزلك أو مقر عملك.</p>
+                    <h4 class="font-black text-slate-900 text-sm">{{ __('كم يستغرق التوصيل؟') }}</h4>
+                    <p class="text-slate-600 leading-relaxed font-normal">{{ __('يصلك الطلب خلال 24 إلى 48 ساعة كحد أقصى لجميع المدن والمناطق المغربية حتى باب منزلك أو مقر عملك.') }}</p>
                 </div>
 
                 <div class="bg-white border border-slate-200/90 p-5 rounded-2xl space-y-1.5 shadow-sm">
-                    <h4 class="font-black text-slate-900 text-sm">ماذا لو كان هناك أي مشكل في المنتج؟</h4>
-                    <p class="text-slate-600 leading-relaxed font-normal">نوفر ضمان استبدال مجاني وفوري لمدة 7 أيام عند وجود أي مشكل، يكفي التواصل مع فريق الدعم عبر الواتساب وسنقوم بخدمتك فوراً.</p>
+                    <h4 class="font-black text-slate-900 text-sm">{{ __('ماذا لو كان هناك أي مشكل في المنتج؟') }}</h4>
+                    <p class="text-slate-600 leading-relaxed font-normal">{{ __('نوفر ضمان استبدال مجاني وفوري لمدة 7 أيام عند وجود أي مشكل، يكفي التواصل مع فريق الدعم عبر الواتساب وسنقوم بخدمتك فوراً.') }}</p>
                 </div>
             </div>
         </section>
@@ -489,9 +489,9 @@
             🛍️
         </div>
         <div class="text-xs">
-            <p class="font-black text-slate-900"><span id="buyerName">يوسف من الدار البيضاء</span> اشترى للتو</p>
+            <p class="font-black text-slate-900"><span id="buyerName">يوسف من الدار البيضاء</span> {{ __('اشترى للتو') }}</p>
             <p class="text-[11px] text-slate-500 truncate max-w-[200px]" id="buyerProduct">ساعة ذكية فاخرة Ultra Pro</p>
-            <span class="text-[9px] text-brand-600 font-bold" id="buyerTime">منذ دقيقة واحدة ⚡</span>
+            <span class="text-[9px] text-brand-600 font-bold" id="buyerTime">{{ __('منذ دقيقة واحدة') }} ⚡</span>
         </div>
     </div>
 
@@ -507,12 +507,12 @@
             </div>
 
             <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed font-normal">
-                المنصة المغربية الرائدة للتسوق المباشر مع خدمة الدفع عند الاستلام وضمان الجودة والسرعة في كل طرد.
+                {{ __('المنصة المغربية الرائدة للتسوق المباشر مع خدمة الدفع عند الاستلام وضمان الجودة والسرعة في كل طرد.') }}
             </p>
 
             <div class="border-t border-slate-900 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
                 <div>
-                    جميع الحقوق محفوظة © {{ date('Y') }} MED EXPRESS ENTERPRISE
+                    {{ __('جميع الحقوق محفوظة') }} © {{ date('Y') }} MED EXPRESS ENTERPRISE
                 </div>
 
                 <!-- 🔥 Developer Signature Badge -->
@@ -530,7 +530,6 @@
     <script>
         const activeProductSlides = {};
 
-        // الدالة المسؤولة عن الانتقال إلى صورة معينة وتحديث المصغرات والنقاط
         function goToProductSlide(prodId, targetIndex, total) {
             const box = document.getElementById(`carousel-box-${prodId}`);
             if (!box) return;
@@ -572,14 +571,12 @@
             activeProductSlides[prodId] = targetIndex;
         }
 
-        // الدالة المسؤولة عن الأسهم التالية والسابقة
         function changeProductSlide(prodId, direction, total) {
             let currentIndex = activeProductSlides[prodId] || 0;
             let nextIndex = (currentIndex + direction + total) % total;
             goToProductSlide(prodId, nextIndex, total);
         }
 
-        // تصفية الكتالوج المباشرة
         function filterLiveCatalog() {
             const query = document.getElementById('productSearch').value.toLowerCase().trim();
             const cards = document.querySelectorAll('.product-card');
@@ -593,7 +590,6 @@
             });
         }
 
-        // عداد تنازلي للعرض المحدود
         let countdownSeconds = 13470;
         setInterval(() => {
             countdownSeconds--;
@@ -605,13 +601,12 @@
             if (el) el.innerText = `${h}:${m}:${s}`;
         }, 1000);
 
-        // محاكاة إشعارات المشترين الحية
         const buyerSimulations = [
-            { name: 'يوسف من الدار البيضاء', product: 'ساعة ذكية فاخرة Ultra Pro', time: 'منذ دقيقة واحدة' },
-            { name: 'أمين من طنجة', product: 'مضخة غسيل السيارات اللاسلكية', time: 'منذ 3 دقائق' },
-            { name: 'فاطمة من مراكش', product: 'ساعة ذكية فاخرة Ultra Pro', time: 'منذ 5 دقائق' },
-            { name: 'طارق من فاس', product: 'مضخة غسيل السيارات اللاسلكية', time: 'منذ دقيقتين' },
-            { name: 'سناء من أكادير', product: 'ساعة ذكية فاخرة Ultra Pro', time: 'منذ 4 دقائق' }
+            { name: 'يوسف من الدار البيضاء', product: 'ساعة ذكية فاخرة Ultra Pro', time: "{{ __('منذ دقيقة واحدة') }}" },
+            { name: 'أمين من طنجة', product: 'مضخة غسيل السيارات اللاسلكية', time: "{{ __('منذ 3 دقائق') }}" },
+            { name: 'فاطمة من مراكش', product: 'ساعة ذكية فاخرة Ultra Pro', time: "{{ __('منذ 5 دقائق') }}" },
+            { name: 'طارق من فاس', product: 'مضخة غسيل السيارات اللاسلكية', time: "{{ __('منذ دقيقتين') }}" },
+            { name: 'سناء من أكادير', product: 'ساعة ذكية فاخرة Ultra Pro', time: "{{ __('منذ 4 دقائق') }}" }
         ];
 
         function triggerSocialProof() {

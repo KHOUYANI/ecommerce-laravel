@@ -3,10 +3,21 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Session;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\ProductController;
+
+// ==========================================
+// 🌐 Language Switcher Route
+// ==========================================
+Route::get('lang/{locale}', function ($locale) {
+    if (in_array($locale, ['ar', 'en', 'fr'])) {
+        Session::put('locale', $locale);
+    }
+    return redirect()->back();
+})->name('lang.switch');
 
 // ==========================================
 // 🖼️ Storage Image Direct Serving Route

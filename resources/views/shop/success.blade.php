@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() == 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تم تأكيد طلبك بنجاح 🎉 | MED EXPRESS</title>
+    <title>{{ __('تم استلام طلبك بنجاح! 🎉') }} | MED EXPRESS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Tajawal', sans-serif; }</style>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Plus+Jakarta+Sans:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: {{ app()->getLocale() == 'ar' ? "'Tajawal', sans-serif" : "'Plus Jakarta Sans', sans-serif" }}; }
+    </style>
 
     @php
         $fbPixel = \App\Models\Setting::get('fb_pixel_id');
@@ -44,6 +46,15 @@
 
     <div class="max-w-2xl mx-auto space-y-6">
 
+        <!-- Language Switcher Bar -->
+        <div class="flex justify-end">
+            <div class="flex items-center gap-1 bg-white p-1 rounded-xl text-[10px] font-bold shadow-sm border border-slate-200">
+                <a href="{{ route('lang.switch', 'ar') }}" class="px-2.5 py-1 rounded-lg transition {{ app()->getLocale() == 'ar' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">AR</a>
+                <a href="{{ route('lang.switch', 'fr') }}" class="px-2.5 py-1 rounded-lg transition {{ app()->getLocale() == 'fr' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">FR</a>
+                <a href="{{ route('lang.switch', 'en') }}" class="px-2.5 py-1 rounded-lg transition {{ app()->getLocale() == 'en' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">EN</a>
+            </div>
+        </div>
+
         @if(session('upsell_added'))
             <div class="bg-emerald-500 text-white p-4 rounded-2xl shadow font-black text-center text-xs animate-bounce">
                 🎉 {{ session('upsell_added') }}
@@ -57,14 +68,14 @@
             </div>
             
             <div>
-                <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">تم تسجيل طلبك بنجاح</span>
-                <h1 class="text-2xl font-black text-slate-900 mt-2">شكراً لك يا {{ $order->customer_name }}!</h1>
-                <p class="text-xs text-slate-400 mt-1">سيتصل بك فريق التوصيل قريباً لتأكيد موعد استلام الطلبية.</p>
+                <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">{{ __('تم استلام طلبك بنجاح! 🎉') }}</span>
+                <h1 class="text-2xl font-black text-slate-900 mt-2">{{ __('شكراً لك يا') }} {{ $order->customer_name }}!</h1>
+                <p class="text-xs text-slate-400 mt-1">{{ __('سيتصل بك فريق التوصيل قريباً لتأكيد موعد استلام الطلبية.') }}</p>
             </div>
 
             <!-- Tracking Code Box -->
             <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex justify-between items-center text-xs">
-                <span class="text-slate-500 font-bold">كود تتبع الطلبية الخاص بك:</span>
+                <span class="text-slate-500 font-bold">{{ __('كود تتبع الطلبية الخاص بك:') }}</span>
                 <span class="font-mono font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-xl text-sm border border-emerald-200" dir="ltr">
                     {{ $order->tracking_number }}
                 </span>
@@ -72,15 +83,15 @@
 
             <!-- WhatsApp Instant Confirmation Button -->
             @php
-                $confMsg = "السلام عليكم، أنا الزبون " . $order->customer_name . "، قمت بطلب المنتج للتو بكود تتبع " . $order->tracking_number . " بمبلغ " . $orderTotal . " DH. أؤكد طلبيتي للشحن وشكراً.";
+                $confMsg = "Bonjour / السلام عليكم، أنا الزبون " . $order->customer_name . "، قمت بطلب المنتج للتو بكود تتبع " . $order->tracking_number . " بمبلغ " . $orderTotal . " DH. أؤكد طلبيتي للشحن وشكراً.";
             @endphp
             <a href="https://wa.me/212773271042?text={{ rawurlencode($confMsg) }}" target="_blank" class="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-black py-3.5 rounded-2xl shadow-md transition flex items-center justify-center gap-2 text-xs">
-                <span>💬 اضغط هنا لتأكيد طلبك فوراً عبر الواتساب وتسريع الشحن</span>
+                <span>💬 {{ __('اضغط هنا لتأكيد طلبك فوراً عبر الواتساب وتسريع الشحن') }}</span>
             </a>
 
             <!-- Order Summary -->
-            <div class="border-t border-slate-100 pt-4 text-right space-y-2 text-xs">
-                <h3 class="font-black text-slate-900 mb-2">تفاصيل الطلبية:</h3>
+            <div class="border-t border-slate-100 pt-4 {{ app()->getLocale() == 'ar' ? 'text-right' : 'text-left' }} space-y-2 text-xs">
+                <h3 class="font-black text-slate-900 mb-2">{{ __('تفاصيل الطلبية:') }}</h3>
                 @foreach($order->items as $item)
                     @php
                         $prodTitle = $item->variant->product->name ?? $item->product->name ?? 'منتج';
@@ -91,7 +102,7 @@
                     </div>
                 @endforeach
                 <div class="border-t pt-2 flex justify-between items-center font-black text-sm text-slate-900">
-                    <span>المجموع الإجمالي للدفع عند الاستلام:</span>
+                    <span>{{ __('المجموع الإجمالي للدفع عند الاستلام:') }}</span>
                     <span class="text-emerald-600 font-black text-base">{{ $orderTotal }} DH</span>
                 </div>
             </div>
@@ -109,7 +120,7 @@
             @endphp
             <div class="bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-3xl p-6 sm:p-8 shadow-xl space-y-4 relative overflow-hidden">
                 <span class="bg-white/20 text-white font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
-                    ⚡ عرض خاص جداً قبل مغادرة الصفحة (خصم 40%)
+                    ⚡ {{ __('عرض خاص جداً قبل مغادرة الصفحة (خصم 40%)') }}
                 </span>
                 <div class="flex flex-col sm:flex-row items-center gap-5 pt-2">
                     <div class="w-24 h-24 bg-white rounded-2xl p-2 shrink-0 flex items-center justify-center overflow-hidden">
@@ -119,13 +130,13 @@
                             <span class="text-3xl">🎁</span>
                         @endif
                     </div>
-                    <div class="text-center sm:text-right flex-1">
+                    <div class="text-center sm:{{ app()->getLocale() == 'ar' ? 'text-right' : 'text-left' }} flex-1">
                         <h3 class="text-lg font-black">{{ $upsellProduct->name }}</h3>
                         <p class="text-xs text-amber-100 mt-1 leading-relaxed">{{ Str::limit($upsellProduct->description, 75) }}</p>
                         <div class="flex items-center justify-center sm:justify-start gap-3 mt-2">
                             <span class="text-2xl font-black">{{ round($upsellProduct->base_price * 0.6) }} DH</span>
                             <span class="text-xs line-through text-amber-200">{{ $upsellProduct->base_price }} DH</span>
-                            <span class="bg-white text-amber-600 font-black text-[10px] px-2 py-0.5 rounded-md">وفر 40%</span>
+                            <span class="bg-white text-amber-600 font-black text-[10px] px-2 py-0.5 rounded-md">{{ __('وفر') }} 40%</span>
                         </div>
                     </div>
                 </div>
@@ -135,7 +146,7 @@
                     <input type="hidden" name="product_id" value="{{ $upsellProduct->id }}">
                     <input type="hidden" name="variant_id" value="{{ $uVariantId }}">
                     <button type="submit" class="w-full bg-slate-900 hover:bg-black text-white font-black py-4 rounded-2xl shadow-lg transition duration-200 text-xs flex items-center justify-center gap-2 mt-2">
-                        <span>➕ أضف هذا العرض إلى طلبيتي بضغطة زر واحدة (بدون إعادة إدخال المعلومات)</span>
+                        <span>➕ {{ __('أضف هذا العرض إلى طلبيتي بضغطة زر واحدة (بدون إعادة إدخال المعلومات)') }}</span>
                     </button>
                 </form>
             </div>
@@ -143,7 +154,7 @@
 
         <div class="text-center">
             <a href="{{ route('shop.index') }}" class="text-xs font-bold text-slate-500 hover:text-emerald-600 transition">
-                الرجوع إلى المتجر الرئيسي 🛍️
+                {{ __('الرجوع للمتجر') }} 🛍️
             </a>
         </div>
 
